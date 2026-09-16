@@ -2,7 +2,7 @@ name: supertarot_mobile
 description: SuperTarot - offline tarot reference, study drills, and AI Q&A.
 publish_to: 'none'
 # Bumped by release-please; the trailing marker is what it looks for.
-version: 1.4.2 # x-release-please-version
+version: 1.5.0 # x-release-please-version
 
 environment:
   sdk: ^3.11.0
