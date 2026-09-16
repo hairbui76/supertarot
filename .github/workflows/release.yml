@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      # release-type deliberately omitted: setting it here would make the
+      # action ignore release-please-config.json entirely.
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  apk:
+    needs: release-please
+    # release_created is unset (not "false") when nothing was released, so
+    # this must be a truthiness check rather than a comparison.
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # The embedding index and the Flutter asset bundle are generated, not
+      # committed. Rebuilding them here means the APK can never ship data that
+      # has drifted from data/output. The hash provider is deterministic and
+      # needs no API key.
+      - name: Build embedding index
+        run: python -m learning.embeddings build --provider hash --lang all
+
+      - name: Build app assets
+        run: python mobile/tools/prepare_assets.py
+
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set. Without it the"\
+                 "release APK would be signed with a throwaway debug key and"\
+                 "users could not upgrade over a previous install."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > mobile/android/supertarot-release.jks
+          {
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyPassword=$KEY_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storeFile=../supertarot-release.jks"
+          } > mobile/android/key.properties
+
+      - name: Install Dart dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: mobile
+        run: flutter analyze
+
+      - name: Test
+        working-directory: mobile
+        run: flutter test
+
+      - name: Build APKs
+        working-directory: mobile
+        run: flutter build apk --release --split-per-abi
+
+      - name: Name APKs after the release
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+        run: |
+          mkdir -p dist
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            cp "mobile/build/app/outputs/flutter-apk/app-$abi-release.apk" \
+               "dist/supertarot-$VERSION-$abi.apk"
+          done
+          ls -la dist
+
+      - name: Attach APKs to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release upload "$TAG" dist/*.apk --clobber
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f mobile/android/supertarot-release.jks mobile/android/key.properties

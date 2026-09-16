@@ -1,0 +1,17 @@
+services:
+  supertarot-bot:
+    image: hairbui76/supertarot
+    container_name: supertarot-bot
+    restart: unless-stopped
+    cpus: 1.00
+    mem_limit: 1g
+    mem_reservation: 512m
+    pids_limit: 256
+    env_file:
+      - .env
+    working_dir: /app
+    command: python -m app
+    volumes:
+      - ./data/bot_state:/app/data/bot_state
+    stdin_open: true
+    tty: true

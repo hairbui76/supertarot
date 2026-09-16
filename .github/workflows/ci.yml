@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Keeps a broken main from producing a GitHub Release that has no APK
+# attached, because the release workflow builds the APK only after the
+# release has already been cut.
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Compile Python packages
+        run: python -m compileall -q app crawler enrichment learning
+
+      - name: Build embedding index
+        run: python -m learning.embeddings build --provider hash --lang all
+
+      - name: Build app assets
+        run: python mobile/tools/prepare_assets.py
+
+      - name: Install Dart dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: mobile
+        run: flutter analyze
+
+      - name: Test
+        working-directory: mobile
+        run: flutter test
