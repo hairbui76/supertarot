@@ -8,6 +8,7 @@ import 'services/grading_service.dart';
 import 'services/llm_client.dart';
 import 'services/qa_service.dart';
 import 'services/study_service.dart';
+import 'services/update_service.dart';
 
 /// Everything the widget tree needs, assembled once at startup.
 class AppServices {
@@ -17,6 +18,7 @@ class AppServices {
     required this.study,
     required this.qa,
     required this.grading,
+    required this.updates,
   });
 
   static Future<AppServices> create() async {
@@ -31,6 +33,7 @@ class AppServices {
       study: StudyService(prefs),
       qa: QaService(repository: repository, client: client),
       grading: GradingService(repository: repository, client: client),
+      updates: UpdateService(),
     );
   }
 
@@ -39,6 +42,7 @@ class AppServices {
   final StudyService study;
   final QaService qa;
   final GradingService grading;
+  final UpdateService updates;
 }
 
 /// Exposes [AppServices] to the widget tree and rebuilds dependents whenever

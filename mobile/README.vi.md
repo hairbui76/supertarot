@@ -13,7 +13,7 @@ mới cần mạng và API key do người dùng tự nhập.
 | Tra cứu | Không | Duyệt từng bộ đúng thứ tự tarot, tìm theo tên, xem ảnh lá bài, correspondences, biểu tượng, và nghĩa xuôi/ngược đầy đủ. Pinch để đổi số cột hiển thị từ 1 tới 5. |
 | Học bài | Chỉ khi chấm | Rút một lá và một facet cụ thể, không lặp lá trong vòng 78 lá. Nhập câu trả lời rồi chấm theo rubric JSON. |
 | Hỏi đáp | Có | Hỏi tự do; app retrieve chunk từ embedding index trong máy rồi nhờ LLM tổng hợp. |
-| Cài đặt | — | Ngôn ngữ (vi/en), provider cho Q&A và chấm bài, API key + model từng provider, số chunk retrieve. |
+| Cài đặt | — | Ngôn ngữ (vi/en), provider cho Q&A và chấm bài, API key + model từng provider, số chunk retrieve, và phần cập nhật trong app. |
 
 API key lưu bằng `flutter_secure_storage` (Android EncryptedSharedPreferences),
 không rời khỏi máy, và app gọi thẳng OpenAI, Anthropic hoặc Google — không có
@@ -54,6 +54,52 @@ Chiều cao ô tính từ chiều rộng thật qua `LayoutBuilder`, nên ảnh 
 bị cắt ở bất kỳ số cột nào; `childAspectRatio` cố định không làm được điều đó
 cho cả dải 1..5 cột.
 
+## Icon app
+
+File nguồn là `icon/app_icon.png` — PNG vuông nền trong suốt, từ 1024px trở
+lên. Sau khi thay file, sinh lại toàn bộ density:
+
+```bash
+dart run flutter_launcher_icons
+```
+
+Lệnh này ghi `android/app/src/main/res/mipmap-*/ic_launcher.png`, file adaptive
+`mipmap-anydpi-v26/ic_launcher.xml`, các lớp foreground trong `drawable-*`, và
+`values/colors.xml`. Tất cả đều được commit nên CI không chạy generator.
+
+Cấu hình nằm trong `pubspec.yaml` ở mục `flutter_launcher_icons`. Hai lựa
+chọn ở đó là có chủ đích:
+
+- `adaptive_icon_foreground_inset: 12` — adaptive icon chỉ đảm bảo phần 66% ở
+  giữa luôn hiển thị, trong khi art chiếm 84% canvas. Inset kéo foreground về
+  khoảng 64% để mask tròn không cắt mất viền.
+- `adaptive_icon_background: "#2196F3"` — xanh dương là màu duy nhất trong
+  bảng màu mà art không có (trang kem, bìa tím, trăng vàng, rùy băng hồng), nên
+  không chi tiết nào bị chìm vào nền.
+
+## Cập nhật trong app
+
+App cài sideload từ GitHub Releases nên tab Cài đặt có phần cập nhật riêng:
+đọc release mới nhất, so tag với phiên bản đang cài, tải APK đúng ABI của
+máy, rồi giao cho package installer của hệ thống.
+
+- `lib/src/services/update_service.dart` — parse và so sánh version, gọi GitHub,
+  chọn asset theo ABI, tải, bàn giao cho installer.
+- `lib/src/widgets/update_section.dart` — UI trong Cài đặt.
+
+Điều kiện và lưu ý:
+
+- Manifest khai báo `REQUEST_INSTALL_PACKAGES`. Android vẫn hỏi người dùng cho
+  phép cài app từ nguồn này ở lần đầu, và luôn hiện màn xác nhận của nó.
+- APK tải về phải cùng chữ ký với bản đang cài, nếu không Android từ chối. CI
+  ký mọi release bằng cùng một keystore nên điều này luôn đúng miễn là release
+  ra từ CI.
+- So sánh version theo số chứ không theo chuỗi, nên 1.10.0 đứng trên 1.9.0.
+  `test/update_service_test.dart` chốt điều đó cùng các ca rate limit, chưa có
+  release, và sai ABI.
+- API GitHub không xác thực giới hạn 60 lần/giờ mỗi IP; vì vậy đây là nút bấm
+  chứ không tự chạy lúc mở app.
+
 ## Yêu cầu
 
 - Flutter stable (đã kiểm với 3.41.9)
@@ -90,7 +136,7 @@ Bundle khoảng 16 MB. Đây là dữ liệu sinh ra nên không commit.
 ```bash
 cd mobile
 flutter pub get
-flutter test                       # 22 test: parity embedding, thứ tự bộ bài, assets, zoom lưới
+flutter test                       # 37 test: parity embedding, thứ tự bộ bài, assets, zoom lưới, updater
 flutter run                        # trên máy hoặc emulator đang kết nối
 flutter build apk --release --split-per-abi
 ```

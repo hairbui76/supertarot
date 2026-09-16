@@ -73,6 +73,17 @@ class Strings {
     required this.about,
     required this.aboutBody,
     required this.offlineBadge,
+    required this.updates,
+    required this.currentVersion,
+    required this.checkForUpdates,
+    required this.checking,
+    required this.upToDate,
+    required this.updateAvailable,
+    required this.downloadAndInstall,
+    required this.downloading,
+    required this.releaseNotes,
+    required this.updateNoAsset,
+    required this.installHint,
   });
 
   final String languageCode;
@@ -144,6 +155,17 @@ class Strings {
   final String about;
   final String aboutBody;
   final String offlineBadge;
+  final String updates;
+  final String currentVersion;
+  final String checkForUpdates;
+  final String checking;
+  final String upToDate;
+  final String updateAvailable;
+  final String downloadAndInstall;
+  final String downloading;
+  final String releaseNotes;
+  final String updateNoAsset;
+  final String installHint;
 
   static const Strings vi = Strings(
     languageCode: 'vi',
@@ -220,6 +242,17 @@ class Strings {
     aboutBody: 'Dữ liệu 78 lá bài, ảnh và embedding index đều nằm trong app. '
         'Chỉ phần diễn giải bằng AI mới cần mạng.',
     offlineBadge: 'Offline',
+    updates: 'Cập nhật',
+    currentVersion: 'Phiên bản hiện tại',
+    checkForUpdates: 'Kiểm tra cập nhật',
+    checking: 'Đang kiểm tra…',
+    upToDate: 'Bạn đang dùng bản mới nhất.',
+    updateAvailable: 'Có bản mới {version}',
+    downloadAndInstall: 'Tải và cài',
+    downloading: 'Đang tải…',
+    releaseNotes: 'Có gì mới',
+    updateNoAsset: 'Bản mới chưa có APK phù hợp với máy này. Mở trang Releases để tải thủ công.',
+    installHint: 'Android sẽ hỏi quyền cài app từ nguồn này trước khi cài.',
   );
 
   static const Strings en = Strings(
@@ -297,10 +330,24 @@ class Strings {
     aboutBody: 'All 78 card meanings, art and the embedding index ship inside '
         'the app. Only AI synthesis needs the network.',
     offlineBadge: 'Offline',
+    updates: 'Updates',
+    currentVersion: 'Installed version',
+    checkForUpdates: 'Check for updates',
+    checking: 'Checking…',
+    upToDate: 'You are on the latest version.',
+    updateAvailable: 'Version {version} is available',
+    downloadAndInstall: 'Download and install',
+    downloading: 'Downloading…',
+    releaseNotes: "What's new",
+    updateNoAsset: 'This release has no APK for your device. Open the Releases page to download manually.',
+    installHint: 'Android will ask you to allow installs from this app first.',
   );
 
   static Strings of(String languageCode) =>
       languageCode == 'en' ? Strings.en : Strings.vi;
+
+  String versionAvailable(String version) =>
+      updateAvailable.replaceAll('{version}', version);
 
   String cycle(int cycleNumber, int remaining) => cycleProgress
       .replaceAll('{cycle}', '$cycleNumber')

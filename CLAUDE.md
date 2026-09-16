@@ -220,6 +220,8 @@ App Flutter đóng gói toàn bộ dữ liệu tarot vào APK. Tra cứu, rút b
 
 - API key lưu bằng `flutter_secure_storage` (Android EncryptedSharedPreferences), gọi thẳng OpenAI/Anthropic/Google, không qua máy chủ trung gian.
 - Bốn tab: Tra cứu (78 lá theo thứ tự bộ bài, pinch để đổi 1-5 cột), Học bài (rút không lặp + chấm rubric), Hỏi đáp (Q&A trên embedding index), Cài đặt.
+- Tab Cài đặt có nút kiểm tra cập nhật: đọc GitHub Releases, so version, tải APK đúng ABI rồi giao cho package installer. Cần `REQUEST_INSTALL_PACKAGES` và APK phải cùng chữ ký với bản đang cài.
+- Icon app sinh từ `mobile/icon/app_icon.png` bằng `dart run flutter_launcher_icons`; file sinh ra được commit nên CI không chạy generator.
 - UI theo hệ neubrutalism trong `DESIGN.md`: token ở `lib/src/theme.dart` (`NeuTokens`), primitive ở `lib/src/widgets/neu.dart`. Chỉ dùng icon vector, không emoji; 5 biểu tượng bộ bài vẽ tay trong `lib/src/widgets/suit_glyph.dart`.
 - Logic port 1-1 từ Python: `deck_order.dart` ← `learning/deck_order.py`, `hash_embedder.dart` ← `HashEmbeddingProvider`, `study_service.dart` ← `learning/study.py`, `grading_service.dart` ← `learning/verification.py` + `app/grading.py`, `qa_service.dart` ← `app/qa.py`.
 - `HashEmbedder` phải sinh vector giống hệt Python, nếu không query không cùng không gian với index đã bundle. `test/hash_embedder_test.dart` chốt parity bằng vector tham chiếu.

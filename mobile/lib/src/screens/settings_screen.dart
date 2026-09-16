@@ -5,6 +5,7 @@ import '../data/settings_store.dart';
 import '../l10n/strings.dart';
 import '../theme.dart';
 import '../widgets/neu.dart';
+import '../widgets/update_section.dart';
 
 /// Language, provider choice, retrieval depth, and the API keys the app uses
 /// to call the vendors directly.
@@ -137,6 +138,8 @@ class SettingsScreen extends StatelessWidget {
           value: settings.answerTopK,
           onChanged: settings.setAnswerTopK,
         ),
+        const SizedBox(height: 30),
+        const UpdateSection(),
         const SizedBox(height: 30),
         NeuHeading(
           icon: Icons.info,

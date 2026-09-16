@@ -8,6 +8,22 @@
 
 ## 2026-09-16
 
+- Thêm icon app thật và nút kiểm tra cập nhật trong app.
+- Icon: user đặt `mobile/icon/app_icon.png` (1254x1254 RGBA, nền trong suốt, art chiếm 84% canvas). Dùng `flutter_launcher_icons` 0.14.4 sinh 5 density legacy + adaptive icon (XML, foreground `drawable-*`, `values/colors.xml`).
+- `adaptive_icon_foreground_inset: 12` vì vùng an toàn của adaptive icon chỉ là 66% giữa canvas, art 84% sẽ bị mask tròn cắt viền; inset 12% kéo về ~64%.
+- `adaptive_icon_background: #2196F3` vì xanh dương là màu duy nhất trong palette mà art không có (trang kem, bìa tím, trăng vàng, rùy băng hồng).
+- Updater: `services/update_service.dart` + `widgets/update_section.dart`. Đọc `releases/latest`, so version theo số, chọn asset theo ABI của máy, tải có progress, giao cho package installer qua `open_filex`. Thêm `REQUEST_INSTALL_PACKAGES` vào manifest.
+- Package thêm: `package_info_plus`, `device_info_plus`, `open_filex`, `path_provider`, `flutter_launcher_icons` (dev).
+- Release notes của release-please là Markdown thô (`##`, link compare, hash commit) nên hiển rất xấu trên card; thêm `formatReleaseNotes()` dọn heading, link, hash, bullet và cắt còn 8 dòng.
+- Verification:
+  - `flutter analyze` — no issues
+  - `flutter test` — 37 test pass (thêm `test/update_service_test.dart`: parse/so sánh version gồm ca 1.10.0 vs 1.9.0, không hạ cấp, chọn asset theo ABI, fallback APK universal, bỏ asset không phải APK, rate limit, chưa có release, tag không phải version, và `formatReleaseNotes`)
+  - Chạy thật trên emulator: icon hiện đúng trên launcher không bị cắt; bấm kiểm tra → tìm đúng v1.1.0 từ GitHub → tải APK x86_64 có progress → Android hỏi quyền cài → sau khi cấp hiện đúng "Do you want to update this app?" → cài xong, `dumpsys` xác nhận versionName 1.1.0 / versionCode 101004000
+- Lưu ý: dialog "update this app" chứng minh APK từ CI cùng chữ ký với bản build local — nếu khác key Android sẽ từ chối thay vì coi là update.
+- Cập nhật `mobile/README.md`, `mobile/README.vi.md`, `CLAUDE.md`, `AGENTS.md`.
+
+## 2026-09-16
+
 - Thêm zoom lưới bài 1-5 cột và chuyển toàn bộ UI app sang neubrutalism theo `DESIGN.md`.
 - Zoom: `SettingsStore.gridColumns` (clamp 1..5, lưu prefs), pinch trên lưới, kèm nút tăng/giảm trên app bar cho dễ thấy.
 - Bug quan trọng: bản đầu dùng `GestureDetector(onScaleStart/onScaleUpdate)` bọc `GridView` — pinch không bao giờ chạy vì scale recognizer tranh chấp với drag recognizer của GridView trong gesture arena và thua. Widget test bắt được (nút thì chạy nên test tay không phát hiện). Đổi sang `Listener` thô theo dõi pointer, ngoài gesture arena; đóng băng scroll khi có 2 ngón để không trượt lưới giữa lúc đổi cột.

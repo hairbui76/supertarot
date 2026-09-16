@@ -14,14 +14,37 @@ dependencies:
   shared_preferences: ^2.3.3
   flutter_secure_storage: ^9.2.2
   pointycastle: ^3.9.1
+  package_info_plus: ^9.0.1
+  device_info_plus: ^12.4.0
+  path_provider: ^2.1.6
+  open_filex: ^4.7.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
   assets:
     - assets/data/
     - assets/images/
+
+# Launcher icons are generated from icon/app_icon.png by
+# `dart run flutter_launcher_icons`. Re-run it after replacing that file.
+#
+# The source art is transparent and spans 84% of its canvas, while an adaptive
+# icon only guarantees the central 66% is visible. The 12% inset scales the
+# foreground down to about 64% so no edge is clipped by a circular mask.
+#
+# Background is blue because it is the only palette colour absent from the art
+# (cream pages, violet cover, yellow moon, pink ribbon), so nothing blends in.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "icon/app_icon.png"
+  min_sdk_android: 23
+  adaptive_icon_background: "#2196F3"
+  adaptive_icon_foreground: "icon/app_icon.png"
+  adaptive_icon_foreground_inset: 12

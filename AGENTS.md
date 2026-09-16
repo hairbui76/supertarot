@@ -459,6 +459,10 @@ Tên lá bài trong cả JSON EN và VI đều là tiếng Anh, nên một bản
 
 **Design system:** neubrutalism theo `DESIGN.md` — viền 3px, bóng cứng lệch 4px không blur, màu phẳng bão hòa cao, không gradient, chữ đậm viết hoa, full light/dark. Token nằm ở `lib/src/theme.dart` dưới dạng ThemeExtension `NeuTokens`; mọi màn hình dựng từ primitive trong `lib/src/widgets/neu.dart` và không hard-code viền/bóng. Ở dark, `line` và `shadow` đổi sang gần trắng vì viền đen trên nền tối vô hình. Chỉ dùng icon vector, không emoji; năm biểu tượng bộ bài vẽ bằng path trong `lib/src/widgets/suit_glyph.dart` vì Material không có gươm/chén/đồng xu.
 
+**Cập nhật trong app (`services/update_service.dart`, `widgets/update_section.dart`):** app cài sideload nên tự lo đường cập nhật. Đọc `releases/latest` của GitHub, so tag với version đang cài (so theo số, không theo chuỗi, để 1.10.0 đứng trên 1.9.0), chọn asset khớp ABI của máy, tải có progress rồi giao cho package installer. Cần `REQUEST_INSTALL_PACKAGES` trong manifest; Android vẫn hỏi quyền lần đầu và luôn hiện màn xác nhận. APK tải về phải cùng chữ ký với bản đang cài, nên chỉ đúng khi release ra từ CI. API GitHub không xác thực giới hạn 60 lần/giờ nên đây là nút bấm chứ không chạy lúc mở app.
+
+**Icon app:** sinh từ `mobile/icon/app_icon.png` bằng `dart run flutter_launcher_icons`, cấu hình trong `pubspec.yaml`. `adaptive_icon_foreground_inset: 12` vì adaptive icon chỉ đảm bảo 66% ở giữa hiển thị còn art chiếm 84% canvas. File sinh ra được commit; CI không chạy generator.
+
 **Zoom lưới bài:** 1-5 cột, pinch hoặc nút trên app bar, lưu trong prefs. Pinch phải đi qua `Listener` thô: `GestureDetector` scale tranh chấp với drag recognizer của GridView trong gesture arena và thua, nên pinch không bao giờ chạy. Chiều cao ô tính từ chiều rộng thật qua `LayoutBuilder` để ảnh không bị cắt ở mọi số cột.
 
 **State:** `SettingsStore` giữ prefs + API key (`flutter_secure_storage`, Android EncryptedSharedPreferences) và là `ChangeNotifier` cho `AppScope`. `StudyService` lưu vòng 78 lá và câu hỏi đang mở vào `SharedPreferences`, nên đóng app giữa chừng không mất lá đang hỏi.

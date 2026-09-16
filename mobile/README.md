@@ -14,7 +14,7 @@ themselves.
 | Browse | No | Walk each suit in traditional deck order, search by name, view card art, correspondences, symbols, and the full upright/reversed meanings. Pinch the grid to show anywhere from 1 to 5 cards per row. |
 | Study | Only to grade | Draw one card and one specific facet, never repeating a card within a cycle of 78. Write an answer and have it graded against a JSON rubric. |
 | Ask | Yes | Freeform questions; the app retrieves chunks from the on-device embedding index, then asks an LLM to synthesize. |
-| Settings | — | Language (vi/en), providers for Q&A and grading, API key and model per provider, retrieval depth. |
+| Settings | — | Language (vi/en), providers for Q&A and grading, API key and model per provider, retrieval depth, and the in-app updater. |
 
 API keys are stored with `flutter_secure_storage` (Android
 EncryptedSharedPreferences), never leave the device, and the app calls OpenAI,
@@ -57,6 +57,55 @@ Tile height is computed from the real tile width via `LayoutBuilder`, so the
 artwork is never cropped at any column count; a fixed `childAspectRatio` cannot
 hold across 1..5 columns.
 
+## App icon
+
+The source art is `icon/app_icon.png` — a transparent square PNG, 1024px or
+larger. After replacing it, regenerate every density:
+
+```bash
+dart run flutter_launcher_icons
+```
+
+That writes `android/app/src/main/res/mipmap-*/ic_launcher.png`, the adaptive
+`mipmap-anydpi-v26/ic_launcher.xml`, its foreground layers under `drawable-*`,
+and `values/colors.xml`. All of it is committed, so CI does not run the
+generator.
+
+Configuration lives in `pubspec.yaml` under `flutter_launcher_icons`. Two
+choices there are deliberate:
+
+- `adaptive_icon_foreground_inset: 12` — an adaptive icon only guarantees the
+  central 66% is visible, and the source art spans 84% of its canvas. The inset
+  scales the foreground to roughly 64% so a circular mask cannot clip it.
+- `adaptive_icon_background: "#2196F3"` — blue is the only palette colour the
+  art does not contain (cream pages, violet cover, yellow moon, pink ribbon),
+  so nothing blends into the backdrop.
+
+## In-app updates
+
+The app is sideloaded from GitHub Releases, so Settings carries its own
+updater: it reads the latest release, compares the tag against the installed
+version, downloads the APK matching the device ABI, and hands it to the system
+package installer.
+
+- `lib/src/services/update_service.dart` — version parsing and comparison, the
+  GitHub call, ABI-based asset selection, download, install hand-off.
+- `lib/src/widgets/update_section.dart` — the Settings UI.
+
+Requirements and caveats:
+
+- `REQUEST_INSTALL_PACKAGES` is declared in the manifest. Android still asks
+  the user to allow installs from this app the first time, and shows its own
+  confirmation screen every time.
+- The downloaded APK must carry the same signature as the installed build, or
+  Android refuses it. CI signs every release with the same keystore, so this
+  holds as long as releases come from CI.
+- Version comparison is numeric, not lexical, so 1.10.0 correctly outranks
+  1.9.0. `test/update_service_test.dart` pins that along with the rate-limit,
+  no-release and wrong-ABI paths.
+- GitHub's unauthenticated API allows 60 calls per hour per IP; the check is a
+  button rather than something that runs on launch.
+
 ## Requirements
 
 - Flutter stable (verified with 3.41.9)
@@ -93,7 +142,7 @@ The bundle is roughly 16 MB. It is generated, so it is not committed.
 ```bash
 cd mobile
 flutter pub get
-flutter test                       # 22 tests: embedding parity, deck order, assets, grid zoom
+flutter test                       # 37 tests: embedding parity, deck order, assets, grid zoom, updater
 flutter run                        # on a connected device or emulator
 flutter build apk --release --split-per-abi
 ```
