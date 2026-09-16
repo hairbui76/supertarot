@@ -93,6 +93,14 @@ export const icons: Record<string, string> = {
       '<rect x="14" y="14" width="7" height="7" rx="1"/>',
   ),
   minus: svg('<path d="M5 12h14"/>'),
+  share: svg(
+    '<path d="M12 3v12"/><path d="m8 7 4-4 4 4"/>' +
+      '<path d="M6 11H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1"/>',
+  ),
+  homeAdd: svg(
+    '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/>',
+  ),
+
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
 };
 

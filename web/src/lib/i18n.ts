@@ -54,6 +54,10 @@ export interface Strings {
   getApp: string;
   appNote: string;
   sourceNote: string;
+  installTitle: string;
+  installIos: string;
+  installButton: string;
+  installDismiss: string;
 }
 
 export const STRINGS: Record<Lang, Strings> = {
@@ -113,6 +117,12 @@ export const STRINGS: Record<Lang, Strings> = {
       'Bản web chỉ tra cứu và rút bài. Muốn hỏi đáp và chấm bài bằng AI thì ' +
       'dùng app Android.',
     sourceNote: 'Dữ liệu từ labyrinthos.co',
+    installTitle: 'Cài SuperTarot lên màn hình chính',
+    installIos:
+      'Bấm nút Chia sẻ ở thanh dưới, rồi chọn Thêm vào MH chính. Mở từ đó ' +
+      'sẽ chạy toàn màn hình và xem được cả khi không có mạng.',
+    installButton: 'Cài app',
+    installDismiss: 'Để sau',
   },
   en: {
     siteTitle: 'SuperTarot',
@@ -170,6 +180,12 @@ export const STRINGS: Record<Lang, Strings> = {
       'The web version browses and draws. For AI Q&A and answer grading, use ' +
       'the Android app.',
     sourceNote: 'Data from labyrinthos.co',
+    installTitle: 'Install SuperTarot on your home screen',
+    installIos:
+      'Tap the Share button in the toolbar, then Add to Home Screen. ' +
+      'Launched from there it runs full screen and works offline.',
+    installButton: 'Install',
+    installDismiss: 'Not now',
   },
 };
 

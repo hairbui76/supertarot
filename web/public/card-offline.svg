@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 600" role="img" aria-label="Offline">
+  <!-- Shown in place of card art that has never been viewed while offline.
+       Same proportions as the real art, so the grid does not reflow. -->
+  <rect x="6" y="6" width="338" height="588" rx="14" fill="#dfc79a" stroke="#000" stroke-width="12"/>
+  <path fill="#000" d="M175 214c7 40 21 54 61 61-40 7-54 21-61 61-7-40-21-54-61-61 40-7 54-21 61-61Z"/>
+  <g fill="none" stroke="#000" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M122 402h108"/>
+    <path d="M150 432h52"/>
+  </g>
+</svg>

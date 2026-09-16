@@ -6,6 +6,19 @@
 - If a change modifies structure, schemas, runtime behavior, or adds/removes logic, also update `CLAUDE.md` and `AGENTS.md`.
 - Keep entries concise: date, intent, files touched, verification.
 
+## 2026-09-17
+
+- Web thành PWA cài được — cách để người dùng iPhone có SuperTarot mà không cần bản iOS.
+- `@vite-pwa/astro` trong `web/astro.config.mjs`: manifest (standalone, beige, 2 shortcut rút bài vi/en), precache toàn bộ HTML/CSS/JS/icon; ảnh lá bài cache runtime `CacheFirst` với fallback `public/card-offline.svg`. Bỏ ảnh khỏi precache để lần vào đầu trên 4G không phải tải 6,6 MB.
+- `web/src/components/InstallHint.astro` + `web/src/lib/install.ts` (+ `test/install.test.ts`): nút Cài đặt trên Chromium, hướng dẫn Chia sẻ → Thêm vào MH chính trên iOS, ẩn trong in-app browser, khi standalone, hoặc đã đóng.
+- `prepare_web_assets.py` sinh thêm `apple-touch-icon.png`, `icon-192/512.png`, `icon-maskable-512.png` trên nền be đặc.
+- Thêm `web/tsconfig.json` + `web/src/env.d.ts`: trước đó chưa có tsconfig nên `astro check` không thấy type của `virtual:pwa-info`.
+- Bẫy khi verify: `TaskStop` trên `npx astro preview` không giết tiến trình node con, server vẫn trả lời nên lần thử "offline" đầu tiên không có giá trị. Phải kill theo cổng 4321.
+- Verification:
+  - `npm test` 20 pass, `npm run check` 0 lỗi, build: precache 187 entries
+  - Headless Chrome qua CDP: `getInstallabilityErrors` rỗng, manifest không lỗi, SW activated, cache 186 entries
+  - Tắt hẳn server: `/vi/card/the-fool/`, `/en/card/ten-of-cups/`, `/en/draw/` vẫn mở; lá chưa xem (`king-of-swords`) hiện placeholder SVG
+
 ## 2026-09-16
 
 - Đổi ô lá bài trong lưới: tên nằm trong một thanh trắng bên trong khung, chữ to hơn, thay vì text rời bên dưới khung.

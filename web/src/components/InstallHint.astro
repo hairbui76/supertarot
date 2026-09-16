@@ -1,0 +1,215 @@
+---
+import type { Lang } from '../lib/cards';
+import { t } from '../lib/i18n';
+import { icons } from '../lib/icons';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const strings = t(lang);
+---
+
+<!--
+  Hidden until the script decides a hint applies, so readers who already
+  installed the app, or whose browser cannot install it, never see a flash.
+-->
+<aside class="install" id="install-hint" hidden aria-live="polite">
+  <div class="install__inner">
+    <span class="install__mark" set:html={icons.homeAdd} />
+    <div class="install__text">
+      <strong class="install__title">{strings.installTitle}</strong>
+      <p class="install__ios" data-install="ios" hidden>
+        <span class="install__share" set:html={icons.share} />
+        {strings.installIos}
+      </p>
+    </div>
+    <div class="install__actions">
+      <button
+        class="btn install__button"
+        type="button"
+        data-install="prompt"
+        hidden
+      >
+        {strings.installButton}
+      </button>
+      <button class="install__dismiss" type="button" id="install-dismiss">
+        {strings.installDismiss}
+      </button>
+    </div>
+  </div>
+</aside>
+
+<script>
+  import { installHintKind } from '../lib/install';
+
+  const KEY = 'supertarot-install-dismissed';
+  const hint = document.getElementById('install-hint');
+
+  type PromptEvent = Event & { prompt: () => Promise<void> };
+  let deferred: PromptEvent | null = null;
+
+  function dismissed(): boolean {
+    try {
+      return localStorage.getItem(KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function standalone(): boolean {
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      // iOS Safari only exposes home-screen launch through this flag.
+      (navigator as Navigator & { standalone?: boolean }).standalone === true
+    );
+  }
+
+  function render() {
+    if (!hint) return;
+    const kind = installHintKind({
+      userAgent: navigator.userAgent,
+      maxTouchPoints: navigator.maxTouchPoints ?? 0,
+      standalone: standalone(),
+      hasPrompt: deferred !== null,
+      dismissed: dismissed(),
+    });
+
+    hint.querySelectorAll<HTMLElement>('[data-install]').forEach((element) => {
+      element.hidden = element.dataset.install !== kind;
+    });
+    hint.hidden = kind === null;
+  }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    // Keep the browser's mini-infobar from appearing; our banner offers it.
+    event.preventDefault();
+    deferred = event as PromptEvent;
+    render();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferred = null;
+    if (hint) hint.hidden = true;
+  });
+
+  hint
+    ?.querySelector<HTMLButtonElement>('[data-install="prompt"]')
+    ?.addEventListener('click', async () => {
+      if (!deferred) return;
+      const event = deferred;
+      deferred = null;
+      await event.prompt();
+      render();
+    });
+
+  document.getElementById('install-dismiss')?.addEventListener('click', () => {
+    try {
+      localStorage.setItem(KEY, '1');
+    } catch {
+      /* nothing to persist to; it will simply come back next visit */
+    }
+    if (hint) hint.hidden = true;
+  });
+
+  render();
+</script>
+
+<style>
+  .install {
+    position: fixed;
+    inset-inline: 12px;
+    bottom: 12px;
+    z-index: 20;
+    max-width: 640px;
+    margin-inline: auto;
+    /* Clear the iPhone home indicator when launched without browser chrome. */
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+
+  .install__inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--yellow);
+    color: var(--on-accent);
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+  }
+
+  .install__mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border: 2px solid var(--on-accent);
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  .install__mark :global(svg) {
+    width: 20px;
+    height: 20px;
+  }
+
+  .install__text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .install__title {
+    display: block;
+    font-weight: 900;
+    font-size: 0.92rem;
+    line-height: 1.25;
+  }
+
+  .install__ios {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .install__share {
+    display: inline-grid;
+    place-items: center;
+    vertical-align: -3px;
+    margin-inline-end: 2px;
+  }
+
+  .install__share :global(svg) {
+    width: 16px;
+    height: 16px;
+  }
+
+  .install__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    flex: none;
+  }
+
+  .install__button {
+    padding: 8px 14px;
+    background: #fff;
+    font-size: 0.85rem;
+  }
+
+  .install__dismiss {
+    padding: 4px 6px;
+    border: 0;
+    background: transparent;
+    color: var(--on-accent);
+    font-weight: 800;
+    font-size: 0.78rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+</style>

@@ -1,5 +1,7 @@
 ---
+import { pwaInfo } from 'virtual:pwa-info';
 import '../styles/global.css';
+import InstallHint from '../components/InstallHint.astro';
 import { asset, href, type Lang } from '../lib/cards';
 import { t } from '../lib/i18n';
 import { icons } from '../lib/icons';
@@ -33,7 +35,11 @@ const ogImage = image
     <meta name="description" content={metaDescription} />
     <link rel="canonical" href={canonical.toString()} />
     <link rel="icon" href={asset(base, 'favicon.png')} type="image/png" />
-    <link rel="apple-touch-icon" href={asset(base, 'logo.png')} />
+    <!--
+      iOS ignores the manifest icons for Add to Home Screen and reads this tag
+      instead. It must be opaque: iOS paints transparent pixels black.
+    -->
+    <link rel="apple-touch-icon" href={asset(base, 'apple-touch-icon.png')} />
     <link
       rel="alternate"
       hreflang={other}
@@ -47,7 +53,19 @@ const ogImage = image
     <meta property="og:image" content={ogImage} />
     <meta property="og:locale" content={lang === 'vi' ? 'vi_VN' : 'en_US'} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#dfc79a" />
+    <meta name="theme-color" content="#dfc79a" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#15151a" media="(prefers-color-scheme: dark)" />
+
+    <!-- Installable app. The manifest link and the service worker registration
+         come from @vite-pwa/astro so their URLs follow the build's base. -->
+    {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
+    {pwaInfo?.registerSW?.scriptTag && <Fragment set:html={pwaInfo.registerSW.scriptTag} />}
+    <!-- iOS still reads these for a home-screen launch rather than the manifest. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="SuperTarot" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
     <slot name="head" />
     <script is:inline>
       // Applied before first paint so a dark-mode reader never sees a flash of
@@ -126,6 +144,8 @@ const ogImage = image
         </p>
       </div>
     </footer>
+
+    <InstallHint lang={lang} />
 
     <script is:inline>
       const toggle = document.getElementById('theme-toggle');

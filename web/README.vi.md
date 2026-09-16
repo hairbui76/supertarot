@@ -60,6 +60,22 @@ npm run build    # output tĩnh vào web/dist
 npm run preview
 ```
 
+## Cài như app (PWA)
+
+Site là Progressive Web App cài được, và đây cũng là cách người dùng iPhone có SuperTarot vì không có bản build iOS.
+
+- **Android / Chrome máy tính:** banner vàng có nút Cài đặt, dùng `beforeinstallprompt` của trình duyệt.
+- **iPhone / iPad (Safari):** iOS không có prompt cài, nên banner hướng dẫn bấm Chia sẻ rồi Thêm vào MH chính. Banner ẩn trong trình duyệt nhúng (Facebook, Zalo, Messenger...) vì ở đó không có menu này. Logic nằm ở `src/lib/install.ts`, test ở `test/install.test.ts`.
+- Đóng banner thì được nhớ; mở từ màn hình chính thì không bao giờ hiện.
+
+Offline, cấu hình bằng `@vite-pwa/astro` + Workbox trong `astro.config.mjs`:
+
+- Mọi trang, CSS, JS và icon được precache ở lần vào đầu tiên (~1,9 MB qua mạng), nên toàn bộ tra cứu mở được khi mất mạng.
+- Ảnh lá bài (6,6 MB JPEG) cố ý **không** precache. Ảnh được cache khi xem lần đầu; lá chưa xem sẽ hiện `public/card-offline.svg` khi offline.
+- `registerType: 'autoUpdate'`: bản deploy mới có hiệu lực ở lần chuyển trang kế tiếp.
+
+Icon (`apple-touch-icon.png`, `icon-192/512.png`, `icon-maskable-512.png`) do `prepare_web_assets.py` sinh trên nền be đặc, vì iOS tô pixel trong suốt thành đen; bản maskable giữ logo trong vùng an toàn 80%.
+
 ## Triển khai
 
 `.github/workflows/pages.yml` build và deploy mỗi lần push vào `main`.

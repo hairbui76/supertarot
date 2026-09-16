@@ -201,24 +201,20 @@ def box_resize(
     return out
 
 
-def export_branding() -> None:
-    width, height, rows = read_png(ICON_SOURCE)
-
-    for name, size in (("logo.png", 96), ("favicon.png", 64)):
-        write_png(PUBLIC_DIR / name, box_resize(rows, width, height, size))
-
-    # Open Graph card: 1200x630 beige with the mark centred. No text, because
-    # rendering a font here would mean pulling in a dependency.
-    og_width, og_height, mark = 1200, 630, 360
-    scaled = box_resize(rows, width, height, mark)
-    background = bytes(BEIGE) + bytes([255])
-    canvas = [bytearray(background * og_width) for _ in range(og_height)]
-
-    left, top = (og_width - mark) // 2, (og_height - mark) // 2
-    for y in range(mark):
-        row = scaled[y]
+def paste_centered(
+    canvas: list[bytearray],
+    canvas_width: int,
+    canvas_height: int,
+    art: list[bytearray],
+    art_size: int,
+) -> None:
+    """Alpha-blend a square [art] image onto the middle of [canvas]."""
+    left = (canvas_width - art_size) // 2
+    top = (canvas_height - art_size) // 2
+    for y in range(art_size):
+        row = art[y]
         target = canvas[top + y]
-        for x in range(mark):
+        for x in range(art_size):
             o = x * 4
             alpha = row[o + 3]
             if not alpha:
@@ -229,6 +225,69 @@ def export_branding() -> None:
                     row[o + channel] * alpha
                     + target[t + channel] * (255 - alpha)
                 ) // 255
+
+
+def compose_icon(
+    rows: list[bytearray],
+    width: int,
+    height: int,
+    size: int,
+    scale: float,
+) -> list[bytearray]:
+    """An opaque square icon: the mark on the beige tile.
+
+    Opaque on purpose. iOS fills transparent pixels in an apple-touch-icon with
+    black, which would turn the mark into a dark blob on the home screen.
+    """
+    background = bytes(BEIGE) + bytes([255])
+    canvas = [bytearray(background * size) for _ in range(size)]
+    art_size = max(1, round(size * scale))
+    art = box_resize(rows, width, height, art_size)
+    paste_centered(canvas, size, size, art, art_size)
+    return canvas
+
+
+# The source canvas carries ~8% transparent margin and the art inside it is
+# 84% x 73.5% of the canvas. `scale` below is applied to that whole canvas.
+#
+# - "any" icons and the apple-touch-icon are shown unmasked (iOS only rounds
+#   the corners), so the mark can fill most of the tile.
+# - A maskable icon may be cropped to a circle covering 80% of the tile. The
+#   art's half-diagonal is 0.558 of the canvas, so the canvas scale must stay
+#   under 0.40 / 0.558 = 0.717 for no corner of the art to fall outside it.
+ICON_VARIANTS = (
+    ("apple-touch-icon.png", 180, 0.92),
+    ("icon-192.png", 192, 0.92),
+    ("icon-512.png", 512, 0.92),
+    ("icon-maskable-512.png", 512, 0.70),
+)
+
+
+def export_branding() -> None:
+    width, height, rows = read_png(ICON_SOURCE)
+
+    # Transparent marks for inline use in the page header and the favicon.
+    for name, size in (("logo.png", 96), ("favicon.png", 64)):
+        write_png(PUBLIC_DIR / name, box_resize(rows, width, height, size))
+
+    for name, size, scale in ICON_VARIANTS:
+        write_png(
+            PUBLIC_DIR / name,
+            compose_icon(rows, width, height, size, scale),
+        )
+
+    # Open Graph card: 1200x630 beige with the mark centred. No text, because
+    # rendering a font here would mean pulling in a dependency.
+    og_width, og_height, mark = 1200, 630, 360
+    background = bytes(BEIGE) + bytes([255])
+    canvas = [bytearray(background * og_width) for _ in range(og_height)]
+    paste_centered(
+        canvas,
+        og_width,
+        og_height,
+        box_resize(rows, width, height, mark),
+        mark,
+    )
     write_png(PUBLIC_DIR / "og.png", canvas)
 
 
@@ -243,7 +302,7 @@ def main() -> None:
     print(f"images: {export_images()} files")
 
     export_branding()
-    print("branding: logo.png, favicon.png, og.png")
+    print("branding: logo, favicon, og, apple-touch-icon, pwa icons")
 
     total = sum(
         item.stat().st_size

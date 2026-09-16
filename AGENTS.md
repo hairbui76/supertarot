@@ -491,6 +491,8 @@ Ký release đọc `mobile/android/key.properties` (gitignored); thiếu file th
 
 **Logic dùng chung:** `web/src/lib/study.ts` là port thứ ba của `learning/study.py` (sau Dart). Cùng thứ tự facet, cùng câu chữ, cùng vòng 78 lá không lặp. `web/test/study.test.ts` chốt tính chất không lặp — thứ mà ảnh chụp màn hình không thể chứng minh.
 
+**PWA:** `@vite-pwa/astro` (Workbox `generateSW`) trong `web/astro.config.mjs`. Precache mọi HTML/CSS/JS/icon (~1,9 MB gzip) để cả site mở offline; ảnh `cards/` bị loại khỏi precache (6,6 MB JPEG không nén được) và cache `CacheFirst` khi xem, fallback `card-offline.svg`. `navigateFallback: null` vì đây là site nhiều trang, không phải SPA. `web/src/lib/install.ts` quyết định banner cài đặt (`prompt` cho Chromium, `ios` cho Safari iPhone/iPad, ẩn trong in-app browser và khi đã standalone); test ở `web/test/install.test.ts`. Icon PWA phải đặc (iOS tô nền trong suốt thành đen), bản maskable thu nhỏ còn 70%.
+
 **Deploy:** `.github/workflows/pages.yml` build và đẩy lên GitHub Pages. `site` và `base` lấy từ `actions/configure-pages` lúc build chứ không hard-code, vì tài khoản phục vụ Pages qua custom domain; `robots.txt` sinh từ `Astro.site` cùng lý do.
 
 ---
