@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/hairbui76/supertarot/compare/v1.1.0...v1.2.0) (2026-09-16)
+
+
+### Features
+
+* **mobile:** icon app và nút kiểm tra cập nhật trong app ([1b41034](https://github.com/hairbui76/supertarot/commit/1b41034c8c1a566408a4d256a2b2f6b1cce4791c))
+
 ## [1.1.0](https://github.com/hairbui76/supertarot/compare/v1.0.0...v1.1.0) (2026-09-16)
 
 
