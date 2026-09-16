@@ -16,6 +16,7 @@ supertarot/
 ├── learning/      # Embedding index, study sessions, verification prompts
 ├── app/           # Telegram bot runtime
 ├── mobile/        # Android app (Flutter), same data, runs offline
+├── web/          # Static Astro site, deployed to GitHub Pages
 ├── .github/       # CI and automated releases via release-please
 ├── data/          # HTML cache, images, JSON output, embeddings, bot state
 └── tarot-meaning-links.json
@@ -297,6 +298,26 @@ APKs land in `mobile/build/app/outputs/flutter-apk/`; use
 Re-run `prepare_assets.py` whenever the tarot data or the embedding index
 changes, otherwise the APK ships stale content. See
 [mobile/README.md](mobile/README.md).
+
+## Web
+
+The card meanings are also published as a static site anyone can open in a
+browser, with no install and no API key:
+[haiuet.me/supertarot](https://haiuet.me/supertarot/).
+
+It browses, searches and draws. Q&A and answer grading stay in the Android app,
+because they need an API key.
+
+```powershell
+python web/tools/prepare_web_assets.py
+cd web
+npm install
+npm test
+npm run build
+```
+
+Every push to `main` builds and deploys it through
+`.github/workflows/pages.yml`. See [web/README.md](web/README.md).
 
 ## Releases
 

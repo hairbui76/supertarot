@@ -16,6 +16,7 @@ supertarot/
 ├── learning/      # Embedding index, study session, verification prompt
 ├── app/           # Runtime Telegram bot
 ├── mobile/        # App Android (Flutter), dùng chung dữ liệu, chạy offline
+├── web/           # Site tĩnh Astro, deploy lên GitHub Pages
 ├── .github/       # CI và release tự động bằng release-please
 ├── data/          # Cache HTML, ảnh, JSON output, embeddings, state bot
 └── tarot-meaning-links.json
@@ -296,6 +297,26 @@ APK nằm ở `mobile/build/app/outputs/flutter-apk/`; dùng
 Chạy lại `prepare_assets.py` mỗi khi dữ liệu tarot hoặc embedding index đổi,
 nếu không APK sẽ ship dữ liệu cũ. Chi tiết trong
 [mobile/README.vi.md](mobile/README.vi.md).
+
+## Web
+
+Ý nghĩa 78 lá cũng được công bố dưới dạng site tĩnh, ai cũng mở bằng trình
+duyệt được, không cần cài gì và không cần API key:
+[haiuet.me/supertarot](https://haiuet.me/supertarot/).
+
+Web chỉ tra cứu, tìm kiếm và rút bài. Hỏi đáp và chấm bài vẫn nằm ở app Android
+vì cần API key.
+
+```powershell
+python web/tools/prepare_web_assets.py
+cd web
+npm install
+npm test
+npm run build
+```
+
+Mỗi lần push vào `main` là `.github/workflows/pages.yml` build và deploy. Chi
+tiết trong [web/README.vi.md](web/README.vi.md).
 
 ## Phát hành
 

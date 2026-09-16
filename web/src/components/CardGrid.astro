@@ -1,0 +1,311 @@
+---
+import { href, type Lang, type TarotCard } from '../lib/cards';
+import { t } from '../lib/i18n';
+import { icons } from '../lib/icons';
+
+interface Props {
+  lang: Lang;
+  cards: TarotCard[];
+  /** Renders the search box above the grid. */
+  searchable?: boolean;
+}
+
+const { lang, cards, searchable = false } = Astro.props;
+const strings = t(lang);
+const base = import.meta.env.BASE_URL;
+---
+
+<div class="grid-tools">
+  {
+    searchable && (
+      <div class="search neu">
+        <span class="search__icon" set:html={icons.search} />
+        <input
+          type="search"
+          id="card-search"
+          placeholder={strings.search}
+          aria-label={strings.search}
+          autocomplete="off"
+        />
+      </div>
+    )
+  }
+
+  <div class="zoom" role="group" aria-label={strings.columns}>
+    <button
+      class="icon-btn"
+      type="button"
+      data-zoom="-1"
+      aria-label={strings.fewerColumns}
+      set:html={icons.minus}
+    />
+    <span class="zoom__value" id="zoom-value" aria-live="polite">2</span>
+    <button
+      class="icon-btn"
+      type="button"
+      data-zoom="1"
+      aria-label={strings.moreColumns}
+      set:html={icons.plus}
+    />
+  </div>
+</div>
+
+<p class="no-results" id="no-results" hidden>{strings.noResults}</p>
+
+<ul class="card-grid" id="card-grid">
+  {
+    cards.map((card) => (
+      <li class="card-grid__item" data-name={card.name.toLowerCase()}>
+        <a class="card-tile" href={href(base, lang, 'card', card.slug)}>
+          <img
+            class="card-tile__art"
+            src={`${base.replace(/\/$/, '')}/cards/${card.card_image}`}
+            alt={card.name}
+            width="350"
+            height="600"
+            loading="lazy"
+            decoding="async"
+          />
+          <span class="card-tile__name">{card.name}</span>
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
+<script>
+  const MIN = 1;
+  const MAX = 5;
+  const KEY = 'supertarot-columns';
+
+  const grid = document.getElementById('card-grid');
+  const value = document.getElementById('zoom-value');
+  const search = document.getElementById('card-search') as HTMLInputElement | null;
+  const empty = document.getElementById('no-results');
+
+  if (grid && value) {
+    const read = (): number => {
+      try {
+        const saved = Number(localStorage.getItem(KEY));
+        if (saved >= MIN && saved <= MAX) {
+          return saved;
+        }
+      } catch {
+        /* private mode */
+      }
+      // Wide screens can show more without the art getting tiny.
+      return window.matchMedia('(min-width: 900px)').matches ? 4 : 2;
+    };
+
+    let columns = read();
+
+    const apply = () => {
+      grid.style.setProperty('--columns', String(columns));
+      grid.dataset.dense = columns >= 4 ? 'true' : 'false';
+      value.textContent = String(columns);
+      document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((button) => {
+        const step = Number(button.dataset.zoom);
+        button.disabled = step < 0 ? columns <= MIN : columns >= MAX;
+      });
+    };
+
+    const set = (next: number) => {
+      columns = Math.min(MAX, Math.max(MIN, next));
+      try {
+        localStorage.setItem(KEY, String(columns));
+      } catch {
+        /* nothing to persist to */
+      }
+      apply();
+    };
+
+    document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((button) => {
+      button.addEventListener('click', () => set(columns + Number(button.dataset.zoom)));
+    });
+
+    apply();
+
+    // Pinch to zoom, matching the Android app. Raw pointer distance rather than
+    // a gesture library: two fingers on a scrolling page is all this needs.
+    const points = new Map<number, { x: number; y: number }>();
+    let reference = 0;
+
+    const distance = () => {
+      const [a, b] = [...points.values()];
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    };
+
+    grid.addEventListener('pointerdown', (event) => {
+      points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (points.size === 2) {
+        reference = distance();
+      }
+    });
+
+    grid.addEventListener('pointermove', (event) => {
+      if (!points.has(event.pointerId)) return;
+      points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (points.size !== 2 || !reference) return;
+
+      const ratio = distance() / reference;
+      // Spreading the fingers means bigger cards, which is fewer columns.
+      if (ratio > 1.35) {
+        reference = distance();
+        set(columns - 1);
+      } else if (ratio < 0.75) {
+        reference = distance();
+        set(columns + 1);
+      }
+    });
+
+    const release = (event: PointerEvent) => {
+      points.delete(event.pointerId);
+      if (points.size < 2) reference = 0;
+    };
+    grid.addEventListener('pointerup', release);
+    grid.addEventListener('pointercancel', release);
+  }
+
+  if (search && grid && empty) {
+    search.addEventListener('input', () => {
+      const query = search.value.trim().toLowerCase();
+      let shown = 0;
+      grid.querySelectorAll<HTMLLIElement>('.card-grid__item').forEach((item) => {
+        const match = !query || (item.dataset.name ?? '').includes(query);
+        item.hidden = !match;
+        if (match) shown += 1;
+      });
+      empty.hidden = shown > 0;
+    });
+  }
+</script>
+
+<style>
+  .grid-tools {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 260px;
+    padding: 0 14px;
+  }
+
+  .search__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+
+  .search__icon :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .search input {
+    flex: 1;
+    min-width: 0;
+    padding: 13px 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+  }
+
+  .search input:focus {
+    outline: none;
+  }
+
+  .search input::-webkit-search-cancel-button {
+    filter: grayscale(1);
+  }
+
+  .zoom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-inline-start: auto;
+  }
+
+  .zoom__value {
+    min-width: 24px;
+    text-align: center;
+    font-weight: 900;
+  }
+
+  .no-results {
+    margin: 0 0 20px;
+    padding: 14px 16px;
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--red);
+    color: var(--on-accent);
+    font-weight: 800;
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+  }
+
+  .card-grid {
+    --columns: 2;
+    display: grid;
+    grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    touch-action: pan-y;
+  }
+
+  .card-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .card-tile__art {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 350 / 600;
+    object-fit: cover;
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+    transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+  }
+
+  @media (hover: hover) {
+    .card-tile:hover .card-tile__art {
+      transform: translate(-2px, -2px);
+      box-shadow: calc(var(--shadow-offset) + 2px)
+        calc(var(--shadow-offset) + 2px) 0 var(--shadow);
+    }
+  }
+
+  .card-tile:active .card-tile__art {
+    transform: translate(var(--shadow-offset), var(--shadow-offset));
+    box-shadow: 0 0 0 var(--shadow);
+  }
+
+  .card-tile__name {
+    text-align: center;
+    font-weight: 800;
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+
+  .card-grid[data-dense='true'] .card-tile__art {
+    border-width: 2px;
+    border-radius: 4px;
+  }
+
+  .card-grid[data-dense='true'] .card-tile__name {
+    font-size: 0.65rem;
+  }
+</style>

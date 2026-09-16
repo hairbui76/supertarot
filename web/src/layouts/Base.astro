@@ -1,0 +1,294 @@
+---
+import '../styles/global.css';
+import { asset, href, type Lang } from '../lib/cards';
+import { t } from '../lib/i18n';
+import { icons } from '../lib/icons';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description?: string;
+  /** Path of the equivalent page in the other language, without the base. */
+  altPath?: string;
+  image?: string;
+}
+
+const { lang, title, description, altPath = '', image } = Astro.props;
+const strings = t(lang);
+const base = import.meta.env.BASE_URL;
+const other: Lang = lang === 'vi' ? 'en' : 'vi';
+const metaDescription = description ?? strings.metaDescription;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = image
+  ? new URL(image, Astro.site).toString()
+  : new URL(asset(base, 'og.png'), Astro.site).toString();
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={metaDescription} />
+    <link rel="canonical" href={canonical.toString()} />
+    <link rel="icon" href={asset(base, 'favicon.png')} type="image/png" />
+    <link rel="apple-touch-icon" href={asset(base, 'logo.png')} />
+    <link
+      rel="alternate"
+      hreflang={other}
+      href={new URL(href(base, other, altPath), Astro.site).toString()}
+    />
+    <link rel="alternate" hreflang={lang} href={canonical.toString()} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonical.toString()} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content={lang === 'vi' ? 'vi_VN' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#dfc79a" />
+    <slot name="head" />
+    <script is:inline>
+      // Applied before first paint so a dark-mode reader never sees a flash of
+      // the light palette.
+      try {
+        const saved = localStorage.getItem('supertarot-theme');
+        if (saved === 'light' || saved === 'dark') {
+          document.documentElement.dataset.theme = saved;
+        }
+      } catch {
+        /* private mode: fall back to the media query */
+      }
+    </script>
+  </head>
+  <body data-base={base}>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-head">
+      <div class="wrap site-head__inner">
+        <a class="brand" href={href(base, lang)}>
+          <img
+            class="brand__mark"
+            src={asset(base, 'logo.png')}
+            width="34"
+            height="34"
+            alt=""
+          />
+          <span class="brand__word">SUPERTAROT</span>
+        </a>
+
+        <nav class="site-nav" aria-label={strings.browse}>
+          <a class="site-nav__link" href={href(base, lang)}>{strings.browse}</a>
+          <a class="site-nav__link" href={href(base, lang, 'draw')}>
+            {strings.draw}
+          </a>
+        </nav>
+
+        <div class="site-head__tools">
+          <a
+            class="lang-switch"
+            href={href(base, other, altPath)}
+            hreflang={other}
+            aria-label={other === 'vi' ? 'Tiếng Việt' : 'English'}
+          >
+            {other === 'vi' ? 'VI' : 'EN'}
+          </a>
+          <button
+            class="icon-btn"
+            type="button"
+            id="theme-toggle"
+            aria-label={strings.theme}
+            set:html={icons.contrast}
+          />
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap site-foot__inner">
+        <p class="muted">{strings.appNote}</p>
+        <p class="site-foot__links">
+          <a href="https://github.com/hairbui76/supertarot/releases">
+            {strings.getApp}
+          </a>
+          <span aria-hidden="true">·</span>
+          <a href="https://github.com/hairbui76/supertarot">GitHub</a>
+          <span aria-hidden="true">·</span>
+          <span class="muted">{strings.sourceNote}</span>
+        </p>
+      </div>
+    </footer>
+
+    <script is:inline>
+      const toggle = document.getElementById('theme-toggle');
+      toggle?.addEventListener('click', () => {
+        const root = document.documentElement;
+        const current =
+          root.dataset.theme ??
+          (window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light');
+        const next = current === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = next;
+        try {
+          localStorage.setItem('supertarot-theme', next);
+        } catch {
+          /* nothing to persist to */
+        }
+      });
+    </script>
+  </body>
+</html>
+
+<style>
+  .skip {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    padding: 10px 16px;
+    background: var(--yellow);
+    color: var(--on-accent);
+    border: var(--border-width) solid var(--line);
+    font-weight: 900;
+    z-index: 10;
+  }
+
+  .skip:focus {
+    left: 12px;
+    top: 12px;
+  }
+
+  .site-head {
+    border-bottom: var(--border-width) solid var(--line);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+
+  .site-head__inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 68px;
+    flex-wrap: wrap;
+    padding-block: 10px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .brand__mark {
+    border: 2px solid var(--line);
+    border-radius: 6px;
+    background: var(--beige);
+    padding: 2px;
+  }
+
+  .brand__word {
+    display: inline-block;
+    padding: 4px 10px;
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--yellow);
+    color: var(--on-accent);
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+  }
+
+  .site-nav {
+    display: flex;
+    gap: 8px;
+    margin-inline-start: auto;
+  }
+
+  .site-nav__link {
+    padding: 7px 13px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .site-nav__link:hover {
+    background: var(--violet);
+    color: var(--on-accent);
+  }
+
+  .site-head__tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lang-switch {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    font-weight: 900;
+    font-size: 0.8rem;
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+  }
+
+  main {
+    padding-block: 28px 56px;
+  }
+
+  .site-foot {
+    border-top: var(--border-width) solid var(--line);
+    padding-block: 24px;
+  }
+
+  .site-foot__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.85rem;
+  }
+
+  .site-foot__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .site-foot__links a {
+    font-weight: 800;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .site-foot p {
+    margin: 0;
+  }
+
+  @media (max-width: 560px) {
+    .site-nav {
+      order: 3;
+      width: 100%;
+      margin-inline-start: 0;
+    }
+
+    .site-head__tools {
+      margin-inline-start: auto;
+    }
+  }
+</style>

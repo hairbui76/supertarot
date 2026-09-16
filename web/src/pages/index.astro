@@ -1,0 +1,24 @@
+---
+// The site has no language-neutral landing page; Vietnamese is the default
+// because that is the audience the data was translated for.
+import { href } from '../lib/cards';
+
+const base = import.meta.env.BASE_URL;
+const target = href(base, 'vi');
+---
+
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <link rel="canonical" href={target} />
+    <title>SuperTarot</title>
+  </head>
+  <body>
+    <p><a href={target}>SuperTarot</a></p>
+    <script is:inline define:vars={{ target }}>
+      location.replace(target);
+    </script>
+  </body>
+</html>

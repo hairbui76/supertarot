@@ -1,0 +1,482 @@
+---
+import Base from '../../../layouts/Base.astro';
+import {
+  cards,
+  href,
+  keywordList,
+  LANGS,
+  SUITS,
+  suitType,
+  type CardSection,
+  type Lang,
+  type TarotCard,
+} from '../../../lib/cards';
+import { t } from '../../../lib/i18n';
+import { icons } from '../../../lib/icons';
+
+export function getStaticPaths() {
+  return LANGS.flatMap((lang) =>
+    cards(lang).map((card) => ({
+      params: { lang, slug: card.slug },
+      props: { card },
+    })),
+  );
+}
+
+const lang = Astro.params.lang as Lang;
+const { card } = Astro.props as { card: TarotCard };
+const strings = t(lang);
+const base = import.meta.env.BASE_URL;
+
+const deck = cards(lang);
+const previous = deck[card.order - 1];
+const next = deck[card.order + 1];
+const suit = SUITS.find((item) => suitType(item, lang) === card.type);
+const accent = suit?.accent ?? 'var(--yellow)';
+
+const facts = [
+  { icon: icons.grid, label: strings.type, value: card.type },
+  { icon: icons.leaf, label: strings.element, value: card.element },
+  { icon: icons.moon, label: strings.astrology, value: card.astrology },
+  { icon: icons.help, label: strings.yesNo, value: card.yes_no },
+].filter((fact) => Boolean(fact.value));
+
+const fields: Array<{ key: keyof CardSection; label: string; icon: string }> = [
+  { key: 'love', label: strings.love, icon: icons.heart },
+  { key: 'career', label: strings.career, icon: icons.briefcase },
+  { key: 'finances', label: strings.finances, icon: icons.coins },
+  { key: 'feelings', label: strings.feelings, icon: icons.brain },
+  { key: 'actions', label: strings.actions, icon: icons.target },
+];
+
+const orientations = [
+  {
+    key: 'upright' as const,
+    label: strings.upright,
+    icon: icons.arrowUp,
+    colour: 'var(--green)',
+    section: card.upright,
+    keywords: keywordList(card.upright_keywords),
+  },
+  {
+    key: 'reversed' as const,
+    label: strings.reversed,
+    icon: icons.arrowDown,
+    colour: 'var(--red)',
+    section: card.reversed,
+    keywords: keywordList(card.reversed_keywords),
+  },
+];
+
+const summary = [card.short_meaning, card.description]
+  .filter(Boolean)
+  .join(' ')
+  .slice(0, 200);
+const image = `${base.replace(/\/$/, '')}/cards/${card.card_image}`;
+
+// Structured data so a card page can surface as a rich result.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: card.name,
+  description: summary,
+  image: new URL(image, Astro.site).toString(),
+  inLanguage: lang,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: strings.siteTitle,
+    url: new URL(href(base, lang), Astro.site).toString(),
+  },
+};
+---
+
+<Base
+  lang={lang}
+  title={`${card.name} — ${strings.siteTitle}`}
+  description={summary || strings.metaDescription}
+  altPath={`card/${card.slug}`}
+  image={image}
+>
+  <script
+    type="application/ld+json"
+    is:inline
+    set:html={JSON.stringify(jsonLd)}
+    slot="head"
+  />
+
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href={href(base, lang)}>{strings.browse}</a>
+      {
+        suit && (
+          <>
+            <span aria-hidden="true">/</span>
+            <a href={href(base, lang, 'suit', suit.key)}>{card.type}</a>
+          </>
+        )
+      }
+    </nav>
+
+    <article class="card-page">
+      <aside class="card-page__art">
+        <img
+          class="art neu"
+          src={image}
+          alt={card.name}
+          width="350"
+          height="600"
+        />
+      </aside>
+
+      <div class="card-page__body">
+        <h1>{card.name}</h1>
+
+        {
+          facts.length > 0 && (
+            <ul class="facts">
+              {facts.map((fact) => (
+                <li class="chip">
+                  <span class="chip__icon" set:html={fact.icon} />
+                  <span>
+                    {fact.label}: {fact.value}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        {
+          (card.short_meaning || card.short_rev_meaning) && (
+            <section class="block" style={`--accent:${accent}`}>
+              <div class="heading">
+                <span
+                  class="heading__mark"
+                  style="background: var(--yellow)"
+                  set:html={icons.sparkle}
+                />
+                <span class="heading__title">{strings.shortMeaning}</span>
+              </div>
+              {card.short_meaning && (
+                <p class="lead">
+                  <strong>{strings.upright}.</strong> {card.short_meaning}
+                </p>
+              )}
+              {card.short_rev_meaning && (
+                <p class="lead">
+                  <strong>{strings.reversed}.</strong> {card.short_rev_meaning}
+                </p>
+              )}
+            </section>
+          )
+        }
+
+        {
+          card.description && (
+            <section class="block">
+              <div class="heading">
+                <span
+                  class="heading__mark"
+                  style="background: var(--blue)"
+                  set:html={icons.image}
+                />
+                <span class="heading__title">{strings.cardDescription}</span>
+              </div>
+              <p>{card.description}</p>
+            </section>
+          )
+        }
+
+        {
+          card.symbols && card.symbols.length > 0 && (
+            <section class="block">
+              <div class="heading">
+                <span
+                  class="heading__mark"
+                  style="background: var(--violet)"
+                  set:html={icons.tag}
+                />
+                <span class="heading__title">{strings.symbols}</span>
+              </div>
+              <ul class="symbols">
+                {card.symbols.map((symbol) => (
+                  <li><strong>{symbol.name}</strong>{symbol.meaning ? `: ${symbol.meaning}` : ''}</li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+
+        {
+          orientations.map((orientation) =>
+            orientation.section ? (
+              <section class="orientation" style={`--accent:${orientation.colour}`}>
+                <h2 class="orientation__title">
+                  <span
+                    class="orientation__mark"
+                    set:html={orientation.icon}
+                  />
+                  {orientation.label}
+                </h2>
+
+                {orientation.keywords.length > 0 && (
+                  <ul class="keywords">
+                    {orientation.keywords.map((keyword) => (
+                      <li class="chip chip--fill" style={`background:${orientation.colour}`}>
+                        {keyword}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {orientation.section.description && (
+                  <div class="block">
+                    <div class="heading">
+                      <span
+                        class="heading__mark"
+                        style={`background:${orientation.colour}`}
+                        set:html={icons.book}
+                      />
+                      <span class="heading__title">{strings.meaning}</span>
+                    </div>
+                    <p>{orientation.section.description}</p>
+                  </div>
+                )}
+
+                {fields.map((field) =>
+                  orientation.section?.[field.key] ? (
+                    <div class="block">
+                      <div class="heading">
+                        <span
+                          class="heading__mark"
+                          style={`background:${orientation.colour}`}
+                          set:html={field.icon}
+                        />
+                        <span class="heading__title">{field.label}</span>
+                      </div>
+                      <p>{orientation.section[field.key]}</p>
+                    </div>
+                  ) : null,
+                )}
+              </section>
+            ) : null,
+          )
+        }
+
+        <nav class="pager">
+          {
+            previous ? (
+              <a class="pager__link" href={href(base, lang, 'card', previous.slug)}>
+                <span set:html={icons.arrowLeft} />
+                <span class="pager__text">
+                  <span class="pager__label">{strings.previous}</span>
+                  <span class="pager__name">{previous.name}</span>
+                </span>
+              </a>
+            ) : (
+              <span />
+            )
+          }
+          {
+            next && (
+              <a class="pager__link pager__link--next" href={href(base, lang, 'card', next.slug)}>
+                <span class="pager__text">
+                  <span class="pager__label">{strings.next}</span>
+                  <span class="pager__name">{next.name}</span>
+                </span>
+                <span set:html={icons.arrowRight} />
+              </a>
+            )
+          }
+        </nav>
+      </div>
+    </article>
+  </div>
+</Base>
+
+<style>
+  .crumbs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .crumbs a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .card-page {
+    display: grid;
+    grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+    gap: 36px;
+    align-items: start;
+  }
+
+  .card-page__art {
+    position: sticky;
+    top: 92px;
+  }
+
+  .art {
+    width: 100%;
+    height: auto;
+    padding: 8px;
+    background: var(--surface);
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 4vw, 2.8rem);
+    margin-bottom: 18px;
+  }
+
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin: 0 0 28px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chip__icon {
+    display: grid;
+    place-items: center;
+  }
+
+  .chip__icon :global(svg) {
+    width: 14px;
+    height: 14px;
+  }
+
+  .block {
+    margin-bottom: 24px;
+  }
+
+  .block p {
+    margin: 0 0 8px;
+  }
+
+  .lead {
+    margin: 0 0 10px;
+  }
+
+  .symbols {
+    margin: 0;
+    padding-inline-start: 20px;
+  }
+
+  .symbols li {
+    margin-bottom: 6px;
+  }
+
+  .orientation {
+    margin-top: 36px;
+    padding: 22px;
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+  }
+
+  .orientation__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 1.3rem;
+    text-transform: uppercase;
+  }
+
+  .orientation__mark {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 2px solid var(--line);
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .orientation__mark :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 22px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 36px;
+  }
+
+  .pager__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+    max-width: 48%;
+  }
+
+  .pager__link :global(svg) {
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  .pager__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .pager__link--next .pager__text {
+    text-align: right;
+  }
+
+  .pager__label {
+    font-size: 0.7rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .pager__name {
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 820px) {
+    .card-page {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 26px;
+    }
+
+    .card-page__art {
+      position: static;
+      max-width: 280px;
+      margin-inline: auto;
+    }
+  }
+</style>

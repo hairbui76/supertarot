@@ -1,0 +1,265 @@
+/*
+ * Neubrutalism, as specified in DESIGN.md at the repository root.
+ *
+ * Three rules drive everything: a thick border, a hard offset shadow with no
+ * blur, and flat high-saturation fills. No gradients anywhere.
+ *
+ * Dark mode flips the border and shadow to near-white. A black border against
+ * a dark background is invisible, which would erase the whole style.
+ */
+
+:root {
+  --line: #000000;
+  --shadow: #000000;
+  --border-width: 3px;
+  --shadow-offset: 4px;
+  --radius: 8px;
+
+  --bg: #fffbf0;
+  --surface: #ffffff;
+  --muted: #5a5348;
+
+  --yellow: #ffeb3b;
+  --red: #ff5252;
+  --blue: #2196f3;
+  --green: #3ddc84;
+  --violet: #b47cff;
+  --beige: #dfc79a;
+
+  /* Text and icons on an accent fill are always ink, so contrast stays high. */
+  --on-accent: #000000;
+
+  --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root[data-theme='dark'] {
+  --line: #f2f0e6;
+  --shadow: #f2f0e6;
+  --bg: #15151a;
+  --surface: #232330;
+  --muted: #a8a496;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --line: #f2f0e6;
+    --shadow: #f2f0e6;
+    --bg: #15151a;
+    --surface: #232330;
+    --muted: #a8a496;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--line);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: var(--border-width) solid var(--violet);
+  outline-offset: 3px;
+}
+
+/* ---------- Layout ---------- */
+
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ---------- The one primitive ---------- */
+
+.neu {
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+}
+
+/* Interactive boxes press into their own shadow: the shadow shrinks to zero
+   while the box translates by the same distance, so the outer silhouette
+   stays put and it reads as a physical key. */
+a.neu,
+button.neu,
+.neu-press {
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  a.neu:hover,
+  button.neu:not(:disabled):hover,
+  .neu-press:hover {
+    box-shadow: calc(var(--shadow-offset) + 2px)
+      calc(var(--shadow-offset) + 2px) 0 var(--shadow);
+    transform: translate(-2px, -2px);
+  }
+}
+
+a.neu:active,
+button.neu:not(:disabled):active,
+.neu-press:active {
+  box-shadow: 0 0 0 var(--shadow);
+  transform: translate(var(--shadow-offset), var(--shadow-offset));
+}
+
+button.neu:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ---------- Pieces ---------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.chip--fill {
+  color: var(--on-accent);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--yellow);
+  color: var(--on-accent);
+  font-weight: 900;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+.heading__mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  color: var(--on-accent);
+  flex: none;
+}
+
+.heading__mark svg {
+  width: 15px;
+  height: 15px;
+}
+
+.heading__title {
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.section p {
+  margin: 0;
+}
+
+.section + .section {
+  margin-top: 22px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

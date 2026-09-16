@@ -1,0 +1,265 @@
+---
+import Base from '../../layouts/Base.astro';
+import CardGrid from '../../components/CardGrid.astro';
+import {
+  cards,
+  cardsForSuit,
+  href,
+  LANGS,
+  SUITS,
+  suitLabel,
+  type Lang,
+} from '../../lib/cards';
+import { t } from '../../lib/i18n';
+import { icons, suitGlyphs } from '../../lib/icons';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const strings = t(lang);
+const base = import.meta.env.BASE_URL;
+const all = cards(lang);
+
+const glyphKeys: Record<string, string> = {
+  major: 'major',
+  wands: 'wand',
+  cups: 'cup',
+  swords: 'sword',
+  pentacles: 'pentacle',
+};
+---
+
+<Base
+  lang={lang}
+  title={`${strings.siteTitle} — ${strings.tagline}`}
+  altPath=""
+>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero__text">
+        <h1>{strings.tagline}</h1>
+        <p class="hero__lead muted">{strings.metaDescription}</p>
+        <div class="hero__actions">
+          <a class="btn" href="#suits">
+            <span set:html={icons.book} class="btn__icon" />
+            {strings.chooseSuit}
+          </a>
+          <a class="btn btn--violet" href={href(base, lang, 'draw')}>
+            <span set:html={icons.shuffle} class="btn__icon" />
+            {strings.draw}
+          </a>
+        </div>
+      </div>
+
+      <div class="hero__art" aria-hidden="true">
+        <span class="hero__block hero__block--blue"></span>
+        <span class="hero__block hero__block--red"></span>
+        <span class="hero__block hero__block--yellow" set:html={icons.sparkle} />
+      </div>
+    </section>
+
+    <section id="suits" class="suits">
+      <h2 class="section-title">{strings.chooseSuit}</h2>
+      <ul class="suit-list">
+        {
+          SUITS.map((suit) => {
+            const count = cardsForSuit(lang, suit).length;
+            return (
+              <li>
+                <a
+                  class="suit neu"
+                  href={href(base, lang, 'suit', suit.key)}
+                  style={`--accent:${suit.accent}`}
+                >
+                  <span
+                    class="suit__glyph"
+                    set:html={suitGlyphs[glyphKeys[suit.key]]}
+                  />
+                  <span class="suit__text">
+                    <span class="suit__name">{suitLabel(suit, lang)}</span>
+                    <span class="suit__count">
+                      {count} {strings.cardCount}
+                    </span>
+                  </span>
+                  <span class="suit__go" set:html={icons.arrowRight} />
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </section>
+
+    <section class="all-cards">
+      <h2 class="section-title">
+        {all.length} {strings.cardCount}
+      </h2>
+      <CardGrid lang={lang} cards={all} searchable />
+    </section>
+  </div>
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 32px;
+    align-items: center;
+    margin-bottom: 52px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.1rem);
+    margin-bottom: 14px;
+  }
+
+  .hero__lead {
+    margin: 0 0 24px;
+    max-width: 52ch;
+  }
+
+  .hero__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn__icon {
+    display: grid;
+    place-items: center;
+  }
+
+  .btn__icon :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .btn--violet {
+    background: var(--violet);
+  }
+
+  /* Flat stacked squares: depth from offset and border only, no gradients. */
+  .hero__art {
+    position: relative;
+    height: 220px;
+  }
+
+  .hero__block {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+    display: grid;
+    place-items: center;
+  }
+
+  .hero__block :global(svg) {
+    width: 46px;
+    height: 46px;
+    color: var(--on-accent);
+  }
+
+  .hero__block--blue {
+    background: var(--blue);
+    left: 8%;
+    top: 4px;
+  }
+
+  .hero__block--red {
+    background: var(--red);
+    left: 30%;
+    top: 46px;
+  }
+
+  .hero__block--yellow {
+    background: var(--yellow);
+    left: 52%;
+    top: 88px;
+  }
+
+  .section-title {
+    font-size: 1.35rem;
+    margin-bottom: 18px;
+  }
+
+  .suits {
+    margin-bottom: 52px;
+  }
+
+  .suit-list {
+    display: grid;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .suit {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .suit__glyph {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    flex: none;
+    border: 2px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--line);
+  }
+
+  .suit__glyph :global(svg) {
+    width: 26px;
+    height: 26px;
+  }
+
+  .suit__text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .suit__name {
+    font-weight: 900;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .suit__count {
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .suit__go {
+    display: grid;
+    place-items: center;
+  }
+
+  .suit__go :global(svg) {
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 760px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+    }
+
+    .hero__art {
+      height: 190px;
+    }
+  }
+</style>

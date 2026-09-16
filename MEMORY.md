@@ -8,6 +8,22 @@
 
 ## 2026-09-16
 
+- Thêm bản web tĩnh `web/` bằng Astro, deploy GitHub Pages, cố ý **không có AI**.
+- User chốt: Astro (thay vì Flutter Web hay static thuần), GitHub Pages, và 4 tính năng — tra cứu 78 lá, song ngữ vi/en, zoom lưới 1-5 cột, rút bài ngẫu nhiên. Hỏi đáp và chấm bài bỏ vì cần API key.
+- 171 trang prerender: `/vi/` và `/en/` với home, `suit/<key>`, `card/<slug>`, `draw`; `/` redirect về `/vi/`. Có canonical, hreflang chéo, Open Graph, JSON-LD cho trang lá bài, sitemap.
+- `web/tools/prepare_web_assets.py` sinh `cards_*.json` (kèm slug + order), copy 78 ảnh, và sinh logo/favicon/og từ `mobile/icon/app_icon.png`. Tự viết decoder + encoder PNG trên thư viện chuẩn để không thêm dependency ảnh chỉ vì ba file. Tất cả gitignore, CI dựng lại.
+- `web/src/lib/study.ts` là port thứ ba của `learning/study.py` (sau Dart). `web/test/study.test.ts` 11 test, chốt vòng 78 lá không lặp và cursor facet xoay vòng.
+- Pages phát hiện tài khoản dùng custom domain (`haiuet.me`) chứ không phải `hairbui76.github.io`, nên `site`/`base` lấy từ `actions/configure-pages` lúc build và `robots.txt` sinh từ `Astro.site` thay vì hard-code.
+- Bẫy đã tránh: ảnh chụp headless Chrome ở `--window-size=420` trông như tràn ngang, nhưng đo `scrollWidth`/`clientWidth` thì bằng nhau ở mọi bề rộng — headless Chrome có viewport tối thiểu ~504px nên ảnh chỉ bị cắt. Muốn xem đúng bề rộng điện thoại thì nhúng site vào iframe 390px rồi chụp.
+- Verification:
+  - `npm run check` — 0 errors, 0 warnings, 0 hints
+  - `npm test` — 11 test pass
+  - `npm run build` — 171 trang
+  - Chụp headless: home, card, suit, draw ở light/dark, và bản 390px qua iframe — không tràn ngang
+- Cập nhật `README.md`, `README.vi.md`, `CLAUDE.md`, `AGENTS.md`, thêm `web/README.md` và `web/README.vi.md`.
+
+## 2026-09-16
+
 - Thêm icon app thật và nút kiểm tra cập nhật trong app.
 - Icon: user đặt `mobile/icon/app_icon.png` (1254x1254 RGBA, nền trong suốt, art chiếm 84% canvas). Dùng `flutter_launcher_icons` 0.14.4 sinh 5 density legacy + adaptive icon (XML, foreground `drawable-*`, `values/colors.xml`).
 - `adaptive_icon_foreground_inset: 12` vì vùng an toàn của adaptive icon chỉ là 66% giữa canvas, art 84% sẽ bị mask tròn cắt viền; inset 12% kéo về ~64%.

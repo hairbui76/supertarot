@@ -479,6 +479,22 @@ Ký release đọc `mobile/android/key.properties` (gitignored); thiếu file th
 
 ---
 
+## Agent 9: Static Web (`web/`)
+
+**Nhiệm vụ:** Công bố ý nghĩa 78 lá cho trình duyệt, không cần cài gì và không cần API key.
+
+**Ranh giới rõ ràng:** web **không có AI**. Hỏi đáp và chấm bài cần API key nên chỉ tồn tại ở app Android. Web chỉ giữ những phần chạy được offline và miễn phí: tra cứu, tìm theo tên, rút bài. Trang rút bài hiện đáp án tham chiếu thay vì chấm.
+
+**Pipeline:** `web/tools/prepare_web_assets.py` đọc `data/output` + `data/images` qua `app.learn.load_cards_for_language()` và `sort_cards()`, ghi `web/src/data/cards_*.json` (kèm slug và chỉ số vị trí) và `web/public/cards/`. Nó cũng sinh logo/favicon/og từ `mobile/icon/app_icon.png` bằng decoder/encoder PNG tự viết trên thư viện chuẩn, để không kéo dependency ảnh chỉ vì ba file. Không sinh embedding index.
+
+**Route:** `/vi/` và `/en/` với home, `suit/<key>`, `card/<slug>`, `draw`; gốc `/` redirect về `/vi/`. 171 trang prerender, mỗi trang có canonical, `hreflang` chéo hai ngôn ngữ, Open Graph, và JSON-LD cho trang lá bài.
+
+**Logic dùng chung:** `web/src/lib/study.ts` là port thứ ba của `learning/study.py` (sau Dart). Cùng thứ tự facet, cùng câu chữ, cùng vòng 78 lá không lặp. `web/test/study.test.ts` chốt tính chất không lặp — thứ mà ảnh chụp màn hình không thể chứng minh.
+
+**Deploy:** `.github/workflows/pages.yml` build và đẩy lên GitHub Pages. `site` và `base` lấy từ `actions/configure-pages` lúc build chứ không hard-code, vì tài khoản phục vụ Pages qua custom domain; `robots.txt` sinh từ `Astro.site` cùng lý do.
+
+---
+
 ## Release Pipeline (`.github/workflows/`, `release-please-config.json`)
 
 **Nhiệm vụ:** Bump version, sinh changelog, tạo GitHub Release và đính APK, tất cả từ message của commit.

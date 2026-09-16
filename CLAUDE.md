@@ -60,6 +60,11 @@ supertarot/
 │   ├── assets/                    # cards_*.json, index_*.json/.f32, 78 ảnh lá bài
 │   ├── lib/src/                   # models, data, services, screens, widgets
 │   └── test/                      # parity embedding, deck order, offline assets
+├── web/                           # Site tĩnh Astro (xem web/README.md)
+│   ├── tools/prepare_web_assets.py # Export data repo sang web/src/data + public
+│   ├── src/lib/                   # cards, i18n, icons, study (port của study.py)
+│   ├── src/pages/[lang]/          # home, suit, card, draw — prerender toàn bộ
+│   └── test/                      # test logic rút bài
 ├── data/
 │   ├── raw/                       # HTML cache (tùy chọn)
 │   ├── embeddings/                # Local/prod embedding indexes
@@ -233,6 +238,22 @@ flutter build apk --release --split-per-abi
 ```
 
 Ký release đọc từ `mobile/android/key.properties` (gitignored); thiếu file thì tự quay về debug key. Chi tiết trong `mobile/README.md` (bản tiếng Việt: `mobile/README.vi.md`).
+
+## Web tĩnh (`web/`)
+
+Site Astro công bố ý nghĩa 78 lá cho trình duyệt, deploy lên GitHub Pages qua `.github/workflows/pages.yml` mỗi lần push `main`.
+
+- **Không có AI.** Hỏi đáp và chấm bài chỉ có ở app Android vì cần API key. Web chỉ tra cứu, tìm kiếm, rút bài.
+- Route: `/vi/` và `/en/`, mỗi ngôn ngữ có home, `suit/<key>`, `card/<slug>`, `draw`. Gốc `/` redirect về `/vi/`. Tổng 171 trang prerender.
+- `web/tools/prepare_web_assets.py` sinh `web/src/data/cards_*.json`, `web/public/cards/*.jpg` và logo/favicon/og từ `mobile/icon/app_icon.png`. Tất cả gitignore, CI dựng lại. Không cần embedding index vì không có AI.
+- `web/src/lib/study.ts` là port của `learning/study.py`, khớp với `study_service.dart`. `web/test/study.test.ts` chốt vòng 78 lá không lặp.
+- `site` và `base` lấy từ `actions/configure-pages` lúc build, không hard-code, vì Pages đang chạy qua custom domain.
+- UI theo cùng hệ neubrutalism trong `DESIGN.md`, token ở `web/src/styles/global.css`, icon SVG inline ở `web/src/lib/icons.ts`.
+
+```bash
+python web/tools/prepare_web_assets.py
+cd web && npm install && npm test && npm run build
+```
 
 ## Phát hành tự động (release-please)
 
