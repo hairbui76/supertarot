@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/hairbui76/supertarot/compare/v1.4.0...v1.4.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **web:** bỏ nháy trang trắng khi vào trang gốc ([8bf0911](https://github.com/hairbui76/supertarot/commit/8bf09113981025c1340e5cf0d99b9653184760a1))
+
 ## [1.4.0](https://github.com/hairbui76/supertarot/compare/v1.3.0...v1.4.0) (2026-09-16)
 
 
