@@ -471,6 +471,29 @@ Ký release đọc `mobile/android/key.properties` (gitignored); thiếu file th
 
 ---
 
+## Release Pipeline (`.github/workflows/`, `release-please-config.json`)
+
+**Nhiệm vụ:** Bump version, sinh changelog, tạo GitHub Release và đính APK, tất cả từ message của commit.
+
+**Cấu hình:** một package ở path `.`, `release-type: simple` (bump `version.txt`), `include-component-in-tag: false` (tag `vX.Y.Z`), và `extra-files` kiểu `generic` trỏ vào `mobile/pubspec.yaml` để bump dòng có marker `# x-release-please-version`.
+
+**Chi tiết dễ sai đã xác minh với tài liệu release-please:**
+
+- Không đặt `release-type` trong workflow: nếu có, action bỏ qua hoàn toàn `release-please-config.json`.
+- `version.txt` phải tồn tại sẵn; updater dùng `createIfMissing: false` nên file thiếu chỉ bị warn và bỏ qua. `CHANGELOG.md` thì tự tạo được.
+- Với package ở path `.`, output là `release_created` không có tiền tố; khi không release thì nó rỗng chứ không phải `"false"`, nên phải kiểm tra truthiness thay vì so sánh chuỗi.
+- Job cần `contents: write`, `issues: write`, `pull-requests: write`, và repo phải bật "Allow GitHub Actions to create and approve pull requests".
+
+**`ci.yml`:** chạy trên pull_request và push main — compile Python, build index, sinh assets, `flutter analyze`, `flutter test`. Có mặt vì `release.yml` build APK *sau* khi Release đã được tạo, nên main hỏng sẽ đẻ ra Release không có APK.
+
+**`release.yml` job `apk`:** khôi phục keystore từ secret, sinh lại index + assets, analyze/test, `flutter build apk --release --split-per-abi`, đổi tên thành `supertarot-<version>-<abi>.apk`, `gh release upload`, rồi xoá keystore ở bước `if: always()`.
+
+**versionCode:** `mobile/android/app/build.gradle.kts` suy ra từ `flutter.versionName` theo `(major×10000 + minor×100 + patch) × 10000`. Bốn chữ số cuối bắt buộc để trống vì `--split-per-abi` khiến Flutter cộng thêm `abiCode × 1000` (armeabi-v7a 1, arm64-v8a 2, x86_64 4); đánh số dày hơn sẽ làm hai release khác nhau trùng `versionCode`.
+
+**Dữ liệu sinh ra không commit:** `data/embeddings/` và `mobile/assets/` nằm trong `.gitignore` và được dựng lại trong CI từ `data/output/` + `data/images/`. Provider `hash` deterministic và chỉ cần Python chuẩn (đã kiểm bằng venv trống), nên không có secret nào trong đường build dữ liệu.
+
+---
+
 ## Models (`crawler/models.py`)
 
 ```python

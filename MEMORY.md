@@ -8,6 +8,28 @@
 
 ## 2026-09-16
 
+- Thêm phát hành tự động bằng release-please, khởi tạo git và push lên `hairbui76/supertarot`.
+- `release-please-config.json`: một package ở path `.`, `release-type: simple`, `include-component-in-tag: false` (tag `vX.Y.Z`), `extra-files` kiểu `generic` bump `mobile/pubspec.yaml` qua marker `# x-release-please-version`. Kèm `version.txt` và `.release-please-manifest.json` khởi tạo 1.0.0.
+- `.github/workflows/release.yml`: release-please job + job `apk` (khôi phục keystore từ secret, sinh index + assets, analyze/test, build `--split-per-abi`, đổi tên `supertarot-<version>-<abi>.apk`, upload vào Release, xoá keystore ở `if: always()`).
+- `.github/workflows/ci.yml`: chạy trên PR và push main. Có vì `release.yml` build APK sau khi Release đã tạo, nên main hỏng sẽ đẻ Release rỗng.
+- Bốn chi tiết release-please đã tra tài liệu để tránh sai: không đặt `release-type` trong workflow (sẽ bỏ qua config file); `version.txt` phải tồn tại sẵn vì updater dùng `createIfMissing: false`; output cho path `.` là `release_created` không tiền tố và rỗng khi không release nên phải kiểm tra truthiness; cần `contents/issues/pull-requests: write` cộng setting cho phép Actions tạo PR.
+- Bug đã sửa trong lúc verify: `versionCode` suy ra theo `major*1e6 + minor*1e3 + patch` bị đụng với offset ABI mà `--split-per-abi` cộng vào (`abiCode * 1000`). Đo bằng `aapt2 dump badging`: 1.0.0/arm64 ra 1002000 thay vì 1000000. Đổi sang `(major*10000 + minor*100 + patch) * 10000` để chừa 4 chữ số cuối cho offset. Kết quả: 100001000 / 100002000 / 100004000.
+- Phát hiện `minSdk = 23` đặt trước đó đã quay về `flutter.minSdkVersion`; đổi thành `maxOf(flutter.minSdkVersion, 23)` để giữ yêu cầu mà vẫn theo sàn của Flutter.
+- Phát hiện `data/embeddings/` bị stale: build 2026-05-24, sau đó `tarot_meanings_vi.json` sửa "Sao Thổ in Song Ngư" → "trong", làm 73/1170 chunk còn text cũ. Đã build lại index và mobile assets.
+- Quyết định: `data/embeddings/` và `mobile/assets/` không commit, CI sinh lại từ `data/output/` + `data/images/` bằng provider `hash`. Đã kiểm bằng venv trống rằng cả hai bước chỉ cần Python chuẩn, không cần dependency hay API key. Repo ~10MB thay vì ~37MB và index không thể lệch với JSON nguồn nữa.
+- `.gitignore` gốc: loại `.env` (chứa Telegram token và API key thật), `*.jks`, `key.properties`, `.venv`, `data/raw|cache|cheatsheets|embeddings|bot_state`, `mobile/build`, `mobile/assets`. Giữ `data/*.html` vì tài liệu tham chiếu parser.
+- Đã set 4 secret ký APK trên repo và bật `can_approve_pull_request_reviews` để release-please mở được PR.
+- Thêm `CONTRIBUTING.md` (Conventional Commits, luồng phát hành, versionCode, secrets, dữ liệu sinh ra).
+- Verification:
+  - `flutter analyze` / `flutter test` (17 test) pass sau khi đổi pubspec và gradle
+  - `aapt2 dump badging` xác nhận versionCode 100001000 / 100002000 / 100004000 cho 1.0.0
+  - Quét toàn bộ staged diff không thấy pattern `sk-`, `ghp_`, `sk-ant-`, `AIza`, hay Telegram token
+  - Push `main` thành công; workflow `Release` xanh và release-please đã mở PR `chore(main): release 1.0.0`
+  - Workflow `CI` trên `main` xanh sau 1m52s: compile Python, build index, sinh assets, analyze, test đều pass trên Linux
+- Còn lại: PR release 1.0.0 chưa merge nên job `apk` chưa chạy lần nào. CI trên PR do release-please tạo ở trạng thái `action_required` vì PR được tạo bằng GITHUB_TOKEN.
+
+## 2026-09-16
+
 - Sắp xếp lá bài trong `/learn` theo thứ tự bộ bài thay vì alphabet.
 - Thêm `learning/deck_order.py` với `MAJOR_ARCANA_ORDER` (The Fool 0 → The World 21), `SUIT_ORDER` (Wands, Cups, Swords, Pentacles), `RANK_ORDER` (Ace → Ten → Page → Knight → Queen → King), `deck_position()` và `sort_cards()`. Tên lá bài trong cả JSON EN và VI đều tiếng Anh nên một bảng tra dùng chung. Tên lạ sort xuống cuối thay vì raise.
 - `app/learn.py::cards_for_suit()` gọi `sort_cards()`; nút chọn bộ trong `app/telegram_bot.py::learn_suit_keyboard()` đổi sang Ẩn Chính → Gậy → Cốc → Kiếm → Tiền Vàng.

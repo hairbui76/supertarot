@@ -50,6 +50,11 @@ supertarot/
 │   ├── grading.py                 # Retrieve + selected-provider grading
 │   ├── qa.py                      # Freeform tarot Q&A over embeddings
 │   └── telegram_bot.py            # Long-polling bot runtime
+├── .github/workflows/             # ci.yml (kiểm tra) và release.yml (release-please + APK)
+├── release-please-config.json     # Cấu hình release, extra-files bump mobile/pubspec.yaml
+├── .release-please-manifest.json  # Version hiện tại release-please đang giữ
+├── version.txt                    # File version của release-type `simple`
+├── CONTRIBUTING.md                # Quy ước Conventional Commits và luồng phát hành
 ├── mobile/                        # Flutter Android app (xem mobile/README.md)
 │   ├── tools/prepare_assets.py    # Export data repo sang mobile/assets
 │   ├── assets/                    # cards_*.json, index_*.json/.f32, 78 ảnh lá bài
@@ -225,6 +230,18 @@ flutter build apk --release --split-per-abi
 ```
 
 Ký release đọc từ `mobile/android/key.properties` (gitignored); thiếu file thì tự quay về debug key. Chi tiết trong `mobile/README.md`.
+
+## Phát hành tự động (release-please)
+
+Repo phát hành bằng [release-please](https://github.com/googleapis/release-please); chi tiết quy ước nằm trong `CONTRIBUTING.md`.
+
+- Một version duy nhất cho cả repo, tag `vX.Y.Z`, `CHANGELOG.md` ở root.
+- Commit phải theo Conventional Commits. `feat` bump minor, `fix`/`perf`/`data` bump patch, `!` hoặc `BREAKING CHANGE` bump major. `chore`/`docs`/`refactor`/`test`/`ci` không bump.
+- Merge vào `main` → release-please mở PR `chore(main): release X.Y.Z` đã bump `version.txt` và `mobile/pubspec.yaml`. Merge PR đó → tạo tag, GitHub Release, rồi job `apk` build và đính 3 file `supertarot-X.Y.Z-<abi>.apk`.
+- `mobile/pubspec.yaml` giữ dòng `version: X.Y.Z # x-release-please-version`; không sửa tay.
+- `versionCode` suy ra từ semver trong `mobile/android/app/build.gradle.kts`: `(major×10000 + minor×100 + patch) × 10000`. Bốn chữ số cuối để trống vì `--split-per-abi` khiến Flutter cộng `abiCode × 1000`.
+- CI sinh lại `data/embeddings/` và `mobile/assets/` từ `data/output/` + `data/images/` bằng provider `hash` — không cần dependency Python hay API key, và index không bao giờ lệch với JSON nguồn.
+- Ký APK cần 4 secret: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`. Thiếu `ANDROID_KEYSTORE_BASE64` thì job fail có chủ đích.
 
 ## Rate Limiting
 

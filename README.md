@@ -11,6 +11,7 @@ supertarot/
 ├── learning/      # Embedding, study session, verification prompt
 ├── app/           # Runtime ứng dụng Telegram bot
 ├── mobile/        # Ứng dụng Android (Flutter), dùng chung dữ liệu, chạy offline
+├── .github/       # CI và release tự động bằng release-please
 ├── data/          # Cache HTML, ảnh, JSON output, embedding index, state học bài
 └── tarot-meaning-links.json
 ```
@@ -312,6 +313,12 @@ flutter build apk --release --split-per-abi
 APK nằm ở `mobile/build/app/outputs/flutter-apk/`; dùng `app-arm64-v8a-release.apk` cho điện thoại Android hiện nay.
 
 Chạy lại `prepare_assets.py` sau mỗi lần dữ liệu tarot hoặc embedding index đổi, nếu không APK sẽ ship dữ liệu cũ. Chi tiết trong `mobile/README.md`.
+
+## Phát hành
+
+Tải APK mới nhất ở [Releases](https://github.com/hairbui76/supertarot/releases) — mỗi release đính 3 file, dùng `supertarot-<version>-arm64-v8a.apk` cho điện thoại Android hiện nay.
+
+Phát hành chạy tự động bằng release-please: commit theo Conventional Commits vào `main`, release-please mở PR bump version, merge PR đó là tag + Release + APK tự sinh. Quy ước commit và cách cấu hình secret nằm trong `CONTRIBUTING.md`.
 
 ## Thứ tự chạy đề xuất
 
