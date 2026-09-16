@@ -2,12 +2,13 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
-// GitHub Pages serves a project site under /<repo>/, so every generated link
-// has to carry that prefix. `site` also feeds the sitemap and canonical URLs.
-// CI passes the real origin from actions/configure-pages; this fallback is
-// only for local builds and previews.
-const site = process.env.SITE_URL ?? 'https://haiuet.me';
-const base = process.env.BASE_PATH ?? '/supertarot';
+// CI passes the real origin and base from actions/configure-pages, so the
+// build follows whatever Pages is actually serving. With a custom domain the
+// site sits at the root and `base_path` comes back empty, which is why these
+// use `||` rather than `??`: an empty string has to fall through to '/'.
+// The fallbacks only matter for local builds and previews.
+const site = process.env.SITE_URL || 'https://tarot.hairbui76.id.vn';
+const base = process.env.BASE_PATH || '/';
 
 export default defineConfig({
   site,

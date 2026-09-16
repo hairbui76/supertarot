@@ -13,7 +13,9 @@
 - 171 trang prerender: `/vi/` và `/en/` với home, `suit/<key>`, `card/<slug>`, `draw`; `/` redirect về `/vi/`. Có canonical, hreflang chéo, Open Graph, JSON-LD cho trang lá bài, sitemap.
 - `web/tools/prepare_web_assets.py` sinh `cards_*.json` (kèm slug + order), copy 78 ảnh, và sinh logo/favicon/og từ `mobile/icon/app_icon.png`. Tự viết decoder + encoder PNG trên thư viện chuẩn để không thêm dependency ảnh chỉ vì ba file. Tất cả gitignore, CI dựng lại.
 - `web/src/lib/study.ts` là port thứ ba của `learning/study.py` (sau Dart). `web/test/study.test.ts` 11 test, chốt vòng 78 lá không lặp và cursor facet xoay vòng.
-- Pages phát hiện tài khoản dùng custom domain (`haiuet.me`) chứ không phải `hairbui76.github.io`, nên `site`/`base` lấy từ `actions/configure-pages` lúc build và `robots.txt` sinh từ `Astro.site` thay vì hard-code.
+- Pages phát hiện tài khoản dùng custom domain chứ không phải `hairbui76.github.io`, nên `site`/`base` lấy từ `actions/configure-pages` lúc build và `robots.txt` sinh từ `Astro.site` thay vì hard-code.
+- Domain cuối cùng: `tarot.hairbui76.id.vn`, set làm custom domain của chính repo này nên site ở gốc `/` chứ không phải `/supertarot/`. Vì vậy `astro.config.mjs` dùng `||` chứ không phải `??` cho `BASE_PATH`: khi có custom domain, `configure-pages` trả về chuỗi rỗng, mà `??` không bắt chuỗi rỗng nên base sẽ thành `''` và hỏng.
+- DNS: user thêm 4 bản ghi A đúng IP GitHub Pages nhưng ở panel của nhà đăng ký, trong khi nameserver của `hairbui76.id.vn` trỏ về Cloudflare (`jonah/ophelia.ns.cloudflare.com`) — tra `tarot.hairbui76.id.vn` trả NXDOMAIN với authority là SOA của Cloudflare, tức Cloudflare mới là nơi phải thêm record.
 - Bẫy đã tránh: ảnh chụp headless Chrome ở `--window-size=420` trông như tràn ngang, nhưng đo `scrollWidth`/`clientWidth` thì bằng nhau ở mọi bề rộng — headless Chrome có viewport tối thiểu ~504px nên ảnh chỉ bị cắt. Muốn xem đúng bề rộng điện thoại thì nhúng site vào iframe 390px rồi chụp.
 - Verification:
   - `npm run check` — 0 errors, 0 warnings, 0 hints

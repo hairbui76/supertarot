@@ -55,7 +55,7 @@ No embedding index: there is no AI here, and search is by card name.
 ```bash
 cd web
 npm install
-npm run dev      # http://localhost:4321/supertarot/
+npm run dev      # http://localhost:4321/
 npm test         # the draw logic
 npm run check    # astro check
 npm run build    # static output into web/dist

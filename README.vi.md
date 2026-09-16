@@ -302,7 +302,7 @@ nếu không APK sẽ ship dữ liệu cũ. Chi tiết trong
 
 Ý nghĩa 78 lá cũng được công bố dưới dạng site tĩnh, ai cũng mở bằng trình
 duyệt được, không cần cài gì và không cần API key:
-[haiuet.me/supertarot](https://haiuet.me/supertarot/).
+[tarot.hairbui76.id.vn](https://tarot.hairbui76.id.vn/).
 
 Web chỉ tra cứu, tìm kiếm và rút bài. Hỏi đáp và chấm bài vẫn nằm ở app Android
 vì cần API key.

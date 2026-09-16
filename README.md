@@ -303,7 +303,7 @@ changes, otherwise the APK ships stale content. See
 
 The card meanings are also published as a static site anyone can open in a
 browser, with no install and no API key:
-[haiuet.me/supertarot](https://haiuet.me/supertarot/).
+[tarot.hairbui76.id.vn](https://tarot.hairbui76.id.vn/).
 
 It browses, searches and draws. Q&A and answer grading stay in the Android app,
 because they need an API key.

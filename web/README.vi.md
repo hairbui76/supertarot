@@ -53,7 +53,7 @@ Không có embedding index: ở đây không có AI, và tìm kiếm là theo t�
 ```bash
 cd web
 npm install
-npm run dev      # http://localhost:4321/supertarot/
+npm run dev      # http://localhost:4321/
 npm test         # logic rút bài
 npm run check    # astro check
 npm run build    # output tĩnh vào web/dist
