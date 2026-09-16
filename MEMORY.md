@@ -8,6 +8,16 @@
 
 ## 2026-09-16
 
+- Đổi ô lá bài trong lưới: tên nằm trong một thanh trắng bên trong khung, chữ to hơn, thay vì text rời bên dưới khung.
+- Làm ở cả hai nơi để app và web không lệch nhau: `web/src/components/CardGrid.astro` (viền + bóng chuyển từ `.card-tile__art` lên `.card-tile`, thêm `overflow:hidden`, thanh tên có `border-top`) và `mobile/lib/src/screens/browse_screen.dart` (NeuBox bọc cả Column, `ClipRRect` bán kính trừ đi độ dày viền).
+- Cỡ chữ: web 0.95rem thường / 0.8rem khi từ 4 cột; app 13.5 / 10.5. Chiều cao nhãn trong `_CardGridState` tăng 34→46 và 26→32 vì thanh tên giờ nằm trong khung.
+- User chốt: từ giờ tự merge PR của release-please, không đưa link chờ merge tay. Đã lưu vào memory cá nhân.
+- Verification:
+  - web: `astro check` 0 lỗi, `npm test` 11 pass, build 171 trang, chụp ở 2 và 4 cột
+  - app: `flutter analyze` sạch, `flutter test` 37 pass, cài lên emulator và chụp lưới thật
+
+## 2026-09-16
+
 - Thêm bản web tĩnh `web/` bằng Astro, deploy GitHub Pages, cố ý **không có AI**.
 - User chốt: Astro (thay vì Flutter Web hay static thuần), GitHub Pages, và 4 tính năng — tra cứu 78 lá, song ngữ vi/en, zoom lưới 1-5 cột, rút bài ngẫu nhiên. Hỏi đáp và chấm bài bỏ vì cần API key.
 - 171 trang prerender: `/vi/` và `/en/` với home, `suit/<key>`, `card/<slug>`, `draw`; `/` redirect về `/vi/`. Có canonical, hreflang chéo, Open Graph, JSON-LD cho trang lá bài, sitemap.

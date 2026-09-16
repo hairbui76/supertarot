@@ -262,17 +262,12 @@ const base = import.meta.env.BASE_URL;
     touch-action: pan-y;
   }
 
+  /* The name sits in a bar inside the frame rather than loose underneath, so
+     each tile reads as one card object and the label has somewhere to live. */
   .card-tile {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-  }
-
-  .card-tile__art {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 350 / 600;
-    object-fit: cover;
+    overflow: hidden;
     border: var(--border-width) solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
@@ -280,32 +275,47 @@ const base = import.meta.env.BASE_URL;
     transition: transform 120ms ease-out, box-shadow 120ms ease-out;
   }
 
+  .card-tile__art {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 350 / 600;
+    object-fit: cover;
+  }
+
   @media (hover: hover) {
-    .card-tile:hover .card-tile__art {
+    .card-tile:hover {
       transform: translate(-2px, -2px);
       box-shadow: calc(var(--shadow-offset) + 2px)
         calc(var(--shadow-offset) + 2px) 0 var(--shadow);
     }
   }
 
-  .card-tile:active .card-tile__art {
+  .card-tile:active {
     transform: translate(var(--shadow-offset), var(--shadow-offset));
     box-shadow: 0 0 0 var(--shadow);
   }
 
   .card-tile__name {
+    padding: 9px 8px;
+    border-top: var(--border-width) solid var(--line);
+    background: var(--surface);
     text-align: center;
-    font-weight: 800;
-    font-size: 0.8rem;
+    font-weight: 900;
+    font-size: 0.95rem;
     line-height: 1.2;
+    /* Long names wrap rather than being clipped by the frame. */
+    overflow-wrap: anywhere;
   }
 
-  .card-grid[data-dense='true'] .card-tile__art {
+  .card-grid[data-dense='true'] .card-tile {
     border-width: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 
   .card-grid[data-dense='true'] .card-tile__name {
-    font-size: 0.65rem;
+    padding: 6px 4px;
+    border-top-width: 2px;
+    font-size: 0.8rem;
   }
 </style>

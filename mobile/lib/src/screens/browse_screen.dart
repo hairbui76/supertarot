@@ -356,7 +356,7 @@ class _CardGridState extends State<CardGrid> {
                   horizontalPadding * 2 -
                   gap * (columns - 1)) /
               columns;
-          final double labelHeight = columns >= 4 ? 26 : 34;
+          final double labelHeight = columns >= 4 ? 32 : 46;
           final double tileHeight = tileWidth / _artAspect + labelHeight;
 
           return GridView.builder(
@@ -400,22 +400,28 @@ class _CardTile extends StatelessWidget {
     final NeuTokens neu = context.neu;
     final bool tight = columns >= 4;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Expanded(
-          child: NeuBox(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            padding: EdgeInsets.zero,
-            radius: tight ? 4 : 8,
-            borderWidth: tight ? 2 : 3,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => CardDetailScreen(card: card),
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(tight ? 2 : 5),
+    final Color surface = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final double border = tight ? 2 : 3;
+    final double radius = tight ? 6 : 8;
+
+    // The name lives in a bar inside the frame rather than loose underneath,
+    // so each tile reads as one card object and the label has somewhere to sit.
+    return NeuBox(
+      color: surface,
+      padding: EdgeInsets.zero,
+      radius: radius,
+      borderWidth: border,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CardDetailScreen(card: card),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius - border),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
               child: Image.asset(
                 card.assetPath,
                 fit: BoxFit.cover,
@@ -423,22 +429,34 @@ class _CardTile extends StatelessWidget {
                     Center(child: Icon(Icons.hide_image, color: neu.line)),
               ),
             ),
-          ),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: tight ? 4 : 7,
+              ),
+              decoration: BoxDecoration(
+                color: surface,
+                border: Border(
+                  top: BorderSide(color: neu.line, width: border),
+                ),
+              ),
+              child: Text(
+                card.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: neu.line,
+                  fontWeight: FontWeight.w900,
+                  fontSize: tight ? 10.5 : 13.5,
+                  height: 1.15,
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 5),
-        Text(
-          card.name,
-          maxLines: tight ? 1 : 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: neu.line,
-            fontWeight: FontWeight.w800,
-            fontSize: tight ? 9.5 : 12,
-            height: 1.15,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
