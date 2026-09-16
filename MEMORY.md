@@ -11,7 +11,11 @@
 - Thêm icon app thật và nút kiểm tra cập nhật trong app.
 - Icon: user đặt `mobile/icon/app_icon.png` (1254x1254 RGBA, nền trong suốt, art chiếm 84% canvas). Dùng `flutter_launcher_icons` 0.14.4 sinh 5 density legacy + adaptive icon (XML, foreground `drawable-*`, `values/colors.xml`).
 - `adaptive_icon_foreground_inset: 12` vì vùng an toàn của adaptive icon chỉ là 66% giữa canvas, art 84% sẽ bị mask tròn cắt viền; inset 12% kéo về ~64%.
-- `adaptive_icon_background: #2196F3` vì xanh dương là màu duy nhất trong palette mà art không có (trang kem, bìa tím, trăng vàng, rùy băng hồng).
+- `adaptive_icon_background` ban đầu đặt `#2196F3` vì xanh dương là màu duy nhất trong palette mà art không có; user muốn nền be nên đổi sang `#DFC79A`.
+- Để chọn tone be, viết luôn encoder PNG thuần Python (đã có decoder) để composite foreground lên từng nền ứng viên + mask tròn rồi xem trực tiếp, thay vì build APK từng lần. Cách này cũng dùng để chọn mức inset.
+- Be quá sáng không dùng được: trang sách trong art là `#FDF3DC`, nên `#FFFBF0` chỉ cho 1.07:1 — quyển sách mất khối. `#DFC79A` cho 1.49:1.
+- Inset đổi từ 12% lên 16%: ở 12% art gần như lấp kín vòng tròn nên không thấy nền be; 20-24% thì art quá nhỏ ở 48px.
+- Logo đưa ra trước chữ SUPERTAROT trên app bar: khai `icon/app_icon.png` làm asset Flutter (không tạo file thứ hai để khỏi phải đồng bộ), dùng `cacheWidth` để không decode ảnh 1254px cho ô 28px.
 - Updater: `services/update_service.dart` + `widgets/update_section.dart`. Đọc `releases/latest`, so version theo số, chọn asset theo ABI của máy, tải có progress, giao cho package installer qua `open_filex`. Thêm `REQUEST_INSTALL_PACKAGES` vào manifest.
 - Package thêm: `package_info_plus`, `device_info_plus`, `open_filex`, `path_provider`, `flutter_launcher_icons` (dev).
 - Release notes của release-please là Markdown thô (`##`, link compare, hash commit) nên hiển rất xấu trên card; thêm `formatReleaseNotes()` dọn heading, link, hash, bullet và cắt còn 8 dòng.

@@ -38,6 +38,26 @@ class _HomeScreenState extends State<HomeScreen> {
         titleSpacing: 20,
         title: Row(
           children: <Widget>[
+            // The launcher icon, reused as the wordmark logo. cacheWidth keeps
+            // the 1254px source from being decoded at full size for a 26px tile.
+            NeuBox(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              shadow: false,
+              borderWidth: 2,
+              radius: 6,
+              padding: const EdgeInsets.all(3),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Image.asset(
+                  'icon/app_icon.png',
+                  width: 28,
+                  height: 28,
+                  cacheWidth: 112,
+                  errorBuilder: (_, __, ___) => const SizedBox(width: 28),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             NeuBox(
               color: neu.yellow,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

@@ -30,21 +30,25 @@ flutter:
   assets:
     - assets/data/
     - assets/images/
+    # The launcher icon doubles as the wordmark logo in the app bar.
+    - icon/app_icon.png
 
 # Launcher icons are generated from icon/app_icon.png by
 # `dart run flutter_launcher_icons`. Re-run it after replacing that file.
 #
 # The source art is transparent and spans 84% of its canvas, while an adaptive
-# icon only guarantees the central 66% is visible. The 12% inset scales the
-# foreground down to about 64% so no edge is clipped by a circular mask.
+# icon only guarantees the central 66% is visible. The 16% inset scales the
+# foreground to about 57%: clear of any mask, and leaving enough of the
+# background visible to read as a coloured icon rather than a full-bleed image.
 #
-# Background is blue because it is the only palette colour absent from the art
-# (cream pages, violet cover, yellow moon, pink ribbon), so nothing blends in.
+# Background is a warm beige that matches the app's paper surface. It has to
+# be deeper than the cream pages in the art (#FDF3DC) or the book loses its
+# mass against it: #FFFBF0 sits at 1.07:1 contrast, this at 1.49:1.
 flutter_launcher_icons:
   android: true
   ios: false
   image_path: "icon/app_icon.png"
   min_sdk_android: 23
-  adaptive_icon_background: "#2196F3"
+  adaptive_icon_background: "#DFC79A"
   adaptive_icon_foreground: "icon/app_icon.png"
-  adaptive_icon_foreground_inset: 12
+  adaptive_icon_foreground_inset: 16

@@ -67,15 +67,20 @@ Lệnh này ghi `android/app/src/main/res/mipmap-*/ic_launcher.png`, file adapti
 `mipmap-anydpi-v26/ic_launcher.xml`, các lớp foreground trong `drawable-*`, và
 `values/colors.xml`. Tất cả đều được commit nên CI không chạy generator.
 
+Chính file PNG đó cũng được khai báo làm asset của Flutter và dùng lại làm logo
+trước chữ SUPERTAROT trên app bar, để chỉ có một nguồn duy nhất cho dấu hiệu này.
+
 Cấu hình nằm trong `pubspec.yaml` ở mục `flutter_launcher_icons`. Hai lựa
 chọn ở đó là có chủ đích:
 
-- `adaptive_icon_foreground_inset: 12` — adaptive icon chỉ đảm bảo phần 66% ở
+- `adaptive_icon_foreground_inset: 16` — adaptive icon chỉ đảm bảo phần 66% ở
   giữa luôn hiển thị, trong khi art chiếm 84% canvas. Inset kéo foreground về
-  khoảng 64% để mask tròn không cắt mất viền.
-- `adaptive_icon_background: "#2196F3"` — xanh dương là màu duy nhất trong
-  bảng màu mà art không có (trang kem, bìa tím, trăng vàng, rùy băng hồng), nên
-  không chi tiết nào bị chìm vào nền.
+  khoảng 57%: không mask nào cắt được, và còn đủ nền để icon đọc ra là một
+  dấu hiệu có màu chứ không phải một ảnh tràn viền.
+- `adaptive_icon_background: "#DFC79A"` — be ấm, hợp với nền giấy của app. Nó
+  phải đậm hơn màu trang sách trong art (`#FDF3DC`), nếu không quyển sách mất
+  khối: `#FFFBF0` chỉ cho tương phản 1.07:1 so với trang sách, màu này cho
+  1.49:1.
 
 ## Cập nhật trong app
 

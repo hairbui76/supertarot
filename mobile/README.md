@@ -74,12 +74,18 @@ generator.
 Configuration lives in `pubspec.yaml` under `flutter_launcher_icons`. Two
 choices there are deliberate:
 
-- `adaptive_icon_foreground_inset: 12` — an adaptive icon only guarantees the
+- `adaptive_icon_foreground_inset: 16` — an adaptive icon only guarantees the
   central 66% is visible, and the source art spans 84% of its canvas. The inset
-  scales the foreground to roughly 64% so a circular mask cannot clip it.
-- `adaptive_icon_background: "#2196F3"` — blue is the only palette colour the
-  art does not contain (cream pages, violet cover, yellow moon, pink ribbon),
-  so nothing blends into the backdrop.
+  scales the foreground to about 57%: clear of any mask shape, and leaving
+  enough background visible that the icon reads as a coloured mark rather than
+  a full-bleed image.
+- `adaptive_icon_background: "#DFC79A"` — a warm beige matching the app's paper
+  surface. It has to sit deeper than the cream pages in the art (`#FDF3DC`) or
+  the book loses its mass against it: `#FFFBF0` gives 1.07:1 contrast against
+  the pages, this gives 1.49:1.
+
+The same PNG is declared as a Flutter asset and reused as the wordmark logo in
+the app bar, so there is one source of truth for the mark.
 
 ## In-app updates
 
