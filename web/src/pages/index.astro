@@ -1,24 +1,102 @@
 ---
-// The site has no language-neutral landing page; Vietnamese is the default
-// because that is the audience the data was translated for.
+// The site has no language-neutral landing page, so the root redirects into
+// one. Vietnamese is the default because that is the audience the data was
+// translated for; a returning reader goes back to whichever language they were
+// last browsing, and a first-time visitor follows their browser.
 import { href } from '../lib/cards';
 
 const base = import.meta.env.BASE_URL;
-const target = href(base, 'vi');
+const vi = href(base, 'vi');
+const en = href(base, 'en');
 ---
 
 <!doctype html>
 <html lang="vi">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="refresh" content={`0; url=${target}`} />
-    <link rel="canonical" href={target} />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- A redirect stub has nothing to index; the language homes do. -->
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href={vi} />
     <title>SuperTarot</title>
+
+    <!--
+      The redirect runs in the head, before the body is parsed, so the browser
+      navigates without painting anything. Doing this at the end of the body
+      flashes the fallback markup for a frame or two.
+    -->
+    <script is:inline define:vars={{ vi, en }}>
+      (function () {
+        var target = vi;
+        try {
+          var saved = localStorage.getItem('supertarot-lang');
+          if (saved === 'vi' || saved === 'en') {
+            target = saved === 'en' ? en : vi;
+          } else {
+            var langs = navigator.languages || [navigator.language || ''];
+            for (var i = 0; i < langs.length; i++) {
+              if (/^vi/i.test(langs[i])) break;
+              if (/^en/i.test(langs[i])) {
+                target = en;
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          /* private mode: fall through to Vietnamese */
+        }
+        // replace() keeps this stub out of the back button's history.
+        location.replace(target);
+      })();
+    </script>
+
+    <noscript>
+      <meta http-equiv="refresh" content={`0; url=${vi}`} />
+    </noscript>
+
+    <style>
+      /* Only ever seen without JavaScript, but it should still look like the
+         site rather than a bare white page. */
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        gap: 14px;
+        background: #fffbf0;
+        color: #000;
+        font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+          sans-serif;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #15151a;
+          color: #f2f0e6;
+        }
+      }
+
+      .choices {
+        display: flex;
+        gap: 12px;
+      }
+
+      a {
+        padding: 12px 20px;
+        border: 3px solid currentColor;
+        border-radius: 8px;
+        background: #ffeb3b;
+        color: #000;
+        font-weight: 900;
+        text-decoration: none;
+        box-shadow: 4px 4px 0 currentColor;
+      }
+    </style>
   </head>
   <body>
-    <p><a href={target}>SuperTarot</a></p>
-    <script is:inline define:vars={{ target }}>
-      location.replace(target);
-    </script>
+    <p class="choices">
+      <a href={vi} hreflang="vi">Tiếng Việt</a>
+      <a href={en} hreflang="en">English</a>
+    </p>
   </body>
 </html>

@@ -19,7 +19,12 @@ export default defineConfig({
     // with index.html.
     format: 'directory',
   },
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      // The root is a redirect stub, not a page worth listing.
+      filter: (page) => new URL(page).pathname.replace(base, '/') !== '/',
+    }),
+  ],
   // Every page is prerendered: the site is a reference book, not an app, and
   // there is no backend to talk to.
   output: 'static',

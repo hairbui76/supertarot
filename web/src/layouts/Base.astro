@@ -57,8 +57,11 @@ const ogImage = image
         if (saved === 'light' || saved === 'dark') {
           document.documentElement.dataset.theme = saved;
         }
+        // The root redirect reads this to send a returning reader back to the
+        // language they were last using.
+        localStorage.setItem('supertarot-lang', document.documentElement.lang);
       } catch {
-        /* private mode: fall back to the media query */
+        /* private mode: fall back to the media query and the default language */
       }
     </script>
   </head>
