@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/hairbui76/supertarot/compare/v1.4.1...v1.4.2) (2026-09-16)
+
+
+### Bug Fixes
+
+* **ui:** tên lá bài nằm trong thanh trắng và to hơn ([de99179](https://github.com/hairbui76/supertarot/commit/de99179c971d53bfc4b86ca4d467b8ba1aecec25))
+
 ## [1.4.1](https://github.com/hairbui76/supertarot/compare/v1.4.0...v1.4.1) (2026-09-16)
 
 
