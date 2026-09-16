@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0](https://github.com/hairbui76/supertarot/compare/v1.3.0...v1.4.0) (2026-09-16)
+
+
+### Features
+
+* **web:** site tĩnh Astro công bố 78 lá bài, không có AI ([8b5ecaf](https://github.com/hairbui76/supertarot/commit/8b5ecaf7cafaa440c3c7cf3feb9a6d72b2197661))
+
+
+### Bug Fixes
+
+* **web:** phục vụ site ở tarot.hairbui76.id.vn ([c4b617d](https://github.com/hairbui76/supertarot/commit/c4b617db650389d8b2481f0ef12e1208e70b8b61))
+
 ## [1.3.0](https://github.com/hairbui76/supertarot/compare/v1.2.0...v1.3.0) (2026-09-16)
 
 
