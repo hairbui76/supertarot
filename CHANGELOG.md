@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/hairbui76/supertarot/compare/v1.4.2...v1.5.0) (2026-09-16)
+
+
+### Features
+
+* **web:** cài web thành app (PWA) và dùng offline ([366706b](https://github.com/hairbui76/supertarot/commit/366706bb7129188221b5d5f03c107b45a4be1d7b))
+
 ## [1.4.2](https://github.com/hairbui76/supertarot/compare/v1.4.1...v1.4.2) (2026-09-16)
 
 
