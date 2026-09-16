@@ -6,6 +6,26 @@
 - If a change modifies structure, schemas, runtime behavior, or adds/removes logic, also update `CLAUDE.md` and `AGENTS.md`.
 - Keep entries concise: date, intent, files touched, verification.
 
+## 2026-09-17
+
+- Thêm zoom lưới bài 1-5 cột và chuyển toàn bộ UI app sang neubrutalism theo `DESIGN.md`.
+- Zoom: `SettingsStore.gridColumns` (clamp 1..5, lưu prefs), pinch trên lưới, kèm nút tăng/giảm trên app bar cho dễ thấy.
+- Bug quan trọng: bản đầu dùng `GestureDetector(onScaleStart/onScaleUpdate)` bọc `GridView` — pinch không bao giờ chạy vì scale recognizer tranh chấp với drag recognizer của GridView trong gesture arena và thua. Widget test bắt được (nút thì chạy nên test tay không phát hiện). Đổi sang `Listener` thô theo dõi pointer, ngoài gesture arena; đóng băng scroll khi có 2 ngón để không trượt lưới giữa lúc đổi cột.
+- Chiều cao ô tính từ chiều rộng thật qua `LayoutBuilder` thay vì `childAspectRatio` cố định, nên ảnh lá bài không bị cắt ở bất kỳ số cột nào.
+- Design system: `lib/src/theme.dart` giữ `NeuTokens` (ThemeExtension) — viền 3px, bóng cứng lệch 4px không blur, radius 8px, palette vàng/đỏ/xanh dương + xanh lá và tím thêm vào cho đủ 5 bộ. `lib/src/widgets/neu.dart` có `NeuBox/NeuButton/NeuIconButton/NeuChip/NeuHeading/NeuSection/NeuField`; không màn hình nào hard-code viền hay bóng.
+- Dark mode: `line` và `shadow` đổi sang gần trắng, vì viền đen trên nền tối là vô hình. Đã kiểm bằng `adb shell cmd uimode night yes`.
+- Bỏ toàn bộ emoji trong UI theo yêu cầu của DESIGN.md, thay bằng icon vector. Năm biểu tượng bộ bài vẽ tay trong `lib/src/widgets/suit_glyph.dart` (gậy, chén, gươm, đồng xu có ngôi sao 5 cánh, sparkle cho Ẩn Chính) — Material Icons không có gươm/chén/đồng xu, và bản đầu tôi dùng nhầm icon nguyên tố (lửa/giọt nước/gió/cây) nên user phản hồi đúng là phải dùng biểu tượng của bộ.
+- Màu bộ theo nguyên tố: lửa đỏ, nước xanh dương, khí vàng, đất xanh lá, tím cho Ẩn Chính.
+- Tách `MarkupText` ra `lib/src/widgets/markup_text.dart`, xóa `section_block.dart`.
+- Phần Execution Rules user gửi kèm viết cho landing page web (Navbar/Hero/Pricing/Testimonials/Footer, thẻ `<head>`, Tailwind CDN, Open Graph) nên không áp dụng cho app Flutter; chỉ áp dụng phần visual style. Cũng giữ nguyên song ngữ vi/en thay vì ép toàn bộ text sang tiếng Anh, vì app có toggle ngôn ngữ và dữ liệu tarot có bản tiếng Việt.
+- DESIGN.md tự mâu thuẫn ở mục Do's/Don'ts ("No pure black", "saturation cap 80%") so với chính spec neubrutalism trong cùng file; ưu tiên spec của style.
+- Emulator: GlazeWM tile cửa sổ làm emulator chết liên tục. Cách chạy ổn định là `emulator.exe` qua background task của harness rồi `glazewm command set-floating` ngay sau đó. Launch bằng `(cmd &)` trong Bash thì process bị kill.
+- Verification:
+  - `flutter analyze` — no issues
+  - `flutter test` — 22 test pass (thêm `test/grid_zoom_test.dart`: mặc định 2 cột, pinch ra còn 1, pinch vào tăng cột, stepper đi hết dải 1..5 và clamp hai đầu, giữ cột qua rebuild)
+  - Chạy thật trên emulator: lưới 2/5/1 cột đều đúng và nút clamp đúng, style hiển thị chuẩn ở cả light lẫn dark, glyph bộ bài đúng biểu tượng
+- Cập nhật `mobile/README.md`, `mobile/README.vi.md`, `CLAUDE.md`, `AGENTS.md`.
+
 ## 2026-09-16
 
 - Thêm phát hành tự động bằng release-please, khởi tạo git và push lên `hairbui76/supertarot`.

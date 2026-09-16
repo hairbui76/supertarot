@@ -50,6 +50,12 @@ class SettingsStore extends ChangeNotifier {
   static const String _qaTopKKey = 'qa_top_k';
   static const String _answerTopKKey = 'answer_top_k';
   static const String _apiKeyPrefix = 'api_key_';
+  static const String _gridColumnsKey = 'grid_columns';
+
+  /// How many cards the browse grid shows per row. Pinch-to-zoom moves
+  /// within this range.
+  static const int minGridColumns = 1;
+  static const int maxGridColumns = 5;
 
   static Future<SettingsStore> load() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -76,6 +82,19 @@ class SettingsStore extends ChangeNotifier {
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secure;
   final Map<LlmProvider, String> _apiKeys;
+
+  int get gridColumns =>
+      (_prefs.getInt(_gridColumnsKey) ?? 2)
+          .clamp(minGridColumns, maxGridColumns);
+
+  Future<void> setGridColumns(int value) async {
+    final int next = value.clamp(minGridColumns, maxGridColumns);
+    if (next == gridColumns) {
+      return;
+    }
+    await _prefs.setInt(_gridColumnsKey, next);
+    notifyListeners();
+  }
 
   String get language => _prefs.getString(_languageKey) ?? 'vi';
 

@@ -7,7 +7,8 @@ import '../models/study_draw.dart';
 import '../models/tarot_card.dart';
 import '../services/grading_service.dart';
 import '../services/study_service.dart';
-import '../widgets/section_block.dart';
+import '../theme.dart';
+import '../widgets/neu.dart';
 
 /// Draw a card, answer the facet question, get it graded against the bundled
 /// reference material.
@@ -25,7 +26,6 @@ class _StudyScreenState extends State<StudyScreen> {
   bool _drawing = false;
   bool _grading = false;
   String? _warning;
-
   int _deckSize = 0;
 
   @override
@@ -111,6 +111,7 @@ class _StudyScreenState extends State<StudyScreen> {
   Widget build(BuildContext context) {
     final AppServices services = AppScope.of(context);
     final Strings strings = AppScope.stringsOf(context);
+    final NeuTokens neu = context.neu;
     final StudyProgress progress = services.study.progress(
       services.settings.language,
       deckSize: _deckSize,
@@ -118,79 +119,94 @@ class _StudyScreenState extends State<StudyScreen> {
     final StudyDraw? draw = _draw;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                _deckSize == 0
-                    ? ''
-                    : strings.cycle(progress.cycle, progress.remaining),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-              ),
+        if (_deckSize > 0)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: NeuChip(
+              label: strings.cycle(progress.cycle, progress.remaining),
+              icon: Icons.donut_large,
+              color: neu.blue,
+              selected: true,
             ),
-            if (_drawing)
-              const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (draw == null) ...<Widget>[
-          Text(strings.studyIntro,
-              style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 20),
-        ] else
+          ),
+        const SizedBox(height: 18),
+        if (draw == null)
+          NeuBox(
+            color: neu.yellow,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(Icons.school, color: neu.onAccent),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    strings.studyIntro,
+                    style: TextStyle(
+                      color: neu.onAccent,
+                      fontWeight: FontWeight.w700,
+                      height: 1.45,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
           _DrawCardView(draw: draw, strings: strings),
-        const SizedBox(height: 8),
-        FilledButton.icon(
+        const SizedBox(height: 16),
+        NeuButton(
+          label: draw == null ? strings.drawNew : strings.drawAnother,
+          icon: Icons.style,
+          color: neu.violet,
+          busy: _drawing,
           onPressed: _drawing ? null : _drawCard,
-          icon: const Icon(Icons.style_outlined),
-          label: Text(draw == null ? strings.drawNew : strings.drawAnother),
         ),
         if (draw != null) ...<Widget>[
-          const SizedBox(height: 24),
-          Text(
-            strings.yourAnswer,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
+          const SizedBox(height: 28),
+          NeuField(
             controller: _answer,
+            labelText: strings.yourAnswer,
+            hintText: strings.answerPlaceholder,
             minLines: 4,
             maxLines: 10,
-            textInputAction: TextInputAction.newline,
-            decoration: InputDecoration(hintText: strings.answerPlaceholder),
           ),
           if (_warning != null) ...<Widget>[
-            const SizedBox(height: 8),
-            Text(
-              _warning!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: 10),
+            NeuBox(
+              color: neu.red,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              child: Row(
+                children: <Widget>[
+                  Icon(Icons.warning_amber, size: 18, color: neu.onAccent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _warning!,
+                      style: TextStyle(
+                        color: neu.onAccent,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-          const SizedBox(height: 12),
-          FilledButton.tonalIcon(
+          const SizedBox(height: 14),
+          NeuButton(
+            label: _grading ? strings.grading : strings.gradeAnswer,
+            icon: Icons.fact_check,
+            busy: _grading,
             onPressed: _grading ? null : _grade,
-            icon: _grading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.fact_check_outlined),
-            label: Text(_grading ? strings.grading : strings.gradeAnswer),
           ),
         ],
         if (_outcome != null) ...<Widget>[
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           _GradeView(outcome: _outcome!, strings: strings),
         ],
       ],
@@ -206,56 +222,71 @@ class _DrawCardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+    final NeuTokens neu = context.neu;
+
+    return NeuBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              NeuBox(
+                padding: const EdgeInsets.all(4),
+                shadow: false,
+                borderWidth: 2,
+                radius: 6,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
                   child: Image.asset(
                     draw.assetPath,
-                    width: 90,
+                    width: 86,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox(width: 90),
+                    errorBuilder: (_, __, ___) => const SizedBox(width: 86),
                   ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        draw.cardName,
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      draw.cardName.toUpperCase(),
+                      style: TextStyle(
+                        color: neu.line,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 17,
+                        height: 1.2,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        draw.facetLabel,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 8),
+                    NeuChip(
+                      label: draw.facetLabel,
+                      color: neu.yellow,
+                      selected: true,
+                      dense: true,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SectionBlock(
-              icon: '❓',
-              title: strings.question,
-              body: draw.question,
-            ),
-            SectionBlock(icon: '💡', title: strings.hint, body: draw.hint),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          NeuSection(
+            icon: Icons.help_outline,
+            title: strings.question,
+            body: draw.question,
+            color: neu.blue,
+          ),
+          NeuSection(
+            icon: Icons.lightbulb,
+            title: strings.hint,
+            body: draw.hint,
+            color: neu.yellow,
+          ),
+        ],
       ),
     );
   }
@@ -269,75 +300,108 @@ class _GradeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    final NeuTokens neu = context.neu;
     final GradeResult? grade = outcome.grade;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            if (grade != null) ...<Widget>[
-              Row(
-                children: <Widget>[
-                  Text(
+    return NeuBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (grade != null) ...<Widget>[
+            Row(
+              children: <Widget>[
+                NeuBox(
+                  color: grade.passed ? neu.green : neu.red,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  child: Text(
                     '${grade.score}/100',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: grade.passed
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.error,
+                    style: TextStyle(
+                      color: neu.onAccent,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  InfoChip(
-                    label:
-                        grade.passed ? strings.passed : strings.notPassed,
-                    emphasis: grade.passed,
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: NeuChip(
+                    label: grade.passed ? strings.passed : strings.notPassed,
+                    icon: grade.passed ? Icons.check_circle : Icons.cancel,
+                    color: grade.passed ? neu.green : neu.red,
+                    selected: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _PointList(
+              icon: Icons.check,
+              title: strings.correctPoints,
+              items: grade.correctPoints,
+              color: neu.green,
+            ),
+            _PointList(
+              icon: Icons.add,
+              title: strings.missingPoints,
+              items: grade.missingPoints,
+              color: neu.yellow,
+            ),
+            _PointList(
+              icon: Icons.priority_high,
+              title: strings.incorrectPoints,
+              items: grade.incorrectPoints,
+              color: neu.red,
+            ),
+            if (grade.feedback.isNotEmpty)
+              NeuSection(
+                icon: Icons.rate_review,
+                title: strings.feedback,
+                body: grade.feedback,
+                color: neu.blue,
+              ),
+            if (grade.nextHint.isNotEmpty)
+              NeuSection(
+                icon: Icons.arrow_forward,
+                title: strings.nextHint,
+                body: grade.nextHint,
+                color: neu.violet,
+              ),
+          ] else if (outcome.error != null)
+            NeuBox(
+              color: neu.red,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(Icons.error_outline, size: 18, color: neu.onAccent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      outcome.error!,
+                      style: TextStyle(
+                        color: neu.onAccent,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              _PointList(
-                icon: '✅',
-                title: strings.correctPoints,
-                items: grade.correctPoints,
-              ),
-              _PointList(
-                icon: '➕',
-                title: strings.missingPoints,
-                items: grade.missingPoints,
-              ),
-              _PointList(
-                icon: '⚠️',
-                title: strings.incorrectPoints,
-                items: grade.incorrectPoints,
-              ),
-              if (grade.feedback.isNotEmpty)
-                SectionBlock(
-                  icon: '📝',
-                  title: strings.feedback,
-                  body: grade.feedback,
-                ),
-              if (grade.nextHint.isNotEmpty)
-                SectionBlock(
-                  icon: '👉',
-                  title: strings.nextHint,
-                  body: grade.nextHint,
-                ),
-            ] else if (outcome.error != null)
-              Text(
-                outcome.error!,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-            if (outcome.chunks.isNotEmpty)
-              _ReferenceList(
-                chunks: outcome.chunks,
-                title: strings.referenceChunks,
-              ),
+            ),
+          if (outcome.chunks.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            _ReferenceList(
+              chunks: outcome.chunks,
+              title: strings.referenceChunks,
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -348,35 +412,51 @@ class _PointList extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.items,
+    required this.color,
   });
 
-  final String icon;
+  final IconData icon;
   final String title;
   final List<String> items;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return const SizedBox.shrink();
     }
-    final ThemeData theme = Theme.of(context);
+    final NeuTokens neu = context.neu;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            '$icon $title',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 6),
+          NeuHeading(icon: icon, title: title, color: color),
+          const SizedBox(height: 8),
           for (final String item in items)
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text('• $item', style: theme.textTheme.bodyMedium),
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(top: 7, right: 10),
+                    decoration: BoxDecoration(
+                      color: color,
+                      border: Border.all(color: neu.line, width: 2),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
             ),
         ],
       ),
@@ -386,44 +466,81 @@ class _PointList extends StatelessWidget {
 
 /// Collapsed by default: the retrieved chunks are long, and most of the time
 /// the grade itself is what the learner wants.
-class _ReferenceList extends StatelessWidget {
+class _ReferenceList extends StatefulWidget {
   const _ReferenceList({required this.chunks, required this.title});
 
   final List<ReferenceChunk> chunks;
   final String title;
 
   @override
+  State<_ReferenceList> createState() => _ReferenceListState();
+}
+
+class _ReferenceListState extends State<_ReferenceList> {
+  bool _open = false;
+
+  @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Theme(
-      data: theme.copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        tilePadding: EdgeInsets.zero,
-        childrenPadding: EdgeInsets.zero,
-        title: Text(
-          '📚 $title (${chunks.length})',
-          style: theme.textTheme.titleSmall,
+    final NeuTokens neu = context.neu;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        NeuBox(
+          color: Theme.of(context).colorScheme.surface,
+          borderWidth: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          onTap: () => setState(() => _open = !_open),
+          child: Row(
+            children: <Widget>[
+              Icon(Icons.menu_book, size: 16, color: neu.line),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${widget.title.toUpperCase()} (${widget.chunks.length})',
+                  style: TextStyle(
+                    color: neu.line,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+              Icon(
+                _open ? Icons.expand_less : Icons.expand_more,
+                size: 20,
+                color: neu.line,
+              ),
+            ],
+          ),
         ),
-        children: <Widget>[
-          for (final ReferenceChunk chunk in chunks)
+        if (_open) ...<Widget>[
+          const SizedBox(height: 12),
+          for (final ReferenceChunk chunk in widget.chunks)
             Padding(
-              padding: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.only(bottom: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    chunk.title.isEmpty ? chunk.label : chunk.title,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.primary,
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: NeuChip(
+                      label: chunk.title.isEmpty ? chunk.label : chunk.title,
+                      color: neu.blue,
+                      selected: true,
+                      dense: true,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(chunk.text, style: theme.textTheme.bodySmall),
+                  const SizedBox(height: 6),
+                  Text(
+                    chunk.text,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
         ],
-      ),
+      ],
     );
   }
 }

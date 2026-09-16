@@ -457,6 +457,10 @@ Tên lá bài trong cả JSON EN và VI đều là tiếng Anh, nên một bản
 
 **UI:** bốn tab — Tra cứu (duyệt theo bộ, tìm theo tên, chi tiết lá bài 3 tab Tổng quan/Xuôi/Ngược), Học bài (rút không lặp trong vòng 78 lá + chấm rubric), Hỏi đáp (Q&A trên index), Cài đặt (ngôn ngữ, provider, API key + model, số chunk retrieve).
 
+**Design system:** neubrutalism theo `DESIGN.md` — viền 3px, bóng cứng lệch 4px không blur, màu phẳng bão hòa cao, không gradient, chữ đậm viết hoa, full light/dark. Token nằm ở `lib/src/theme.dart` dưới dạng ThemeExtension `NeuTokens`; mọi màn hình dựng từ primitive trong `lib/src/widgets/neu.dart` và không hard-code viền/bóng. Ở dark, `line` và `shadow` đổi sang gần trắng vì viền đen trên nền tối vô hình. Chỉ dùng icon vector, không emoji; năm biểu tượng bộ bài vẽ bằng path trong `lib/src/widgets/suit_glyph.dart` vì Material không có gươm/chén/đồng xu.
+
+**Zoom lưới bài:** 1-5 cột, pinch hoặc nút trên app bar, lưu trong prefs. Pinch phải đi qua `Listener` thô: `GestureDetector` scale tranh chấp với drag recognizer của GridView trong gesture arena và thua, nên pinch không bao giờ chạy. Chiều cao ô tính từ chiều rộng thật qua `LayoutBuilder` để ảnh không bị cắt ở mọi số cột.
+
 **State:** `SettingsStore` giữ prefs + API key (`flutter_secure_storage`, Android EncryptedSharedPreferences) và là `ChangeNotifier` cho `AppScope`. `StudyService` lưu vòng 78 lá và câu hỏi đang mở vào `SharedPreferences`, nên đóng app giữa chừng không mất lá đang hỏi.
 
 **Interface/CLI:**

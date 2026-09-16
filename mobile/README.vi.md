@@ -10,7 +10,7 @@ mới cần mạng và API key do người dùng tự nhập.
 
 | Tab | Cần API key | Mô tả |
 | --- | --- | --- |
-| Tra cứu | Không | Duyệt từng bộ đúng thứ tự tarot, tìm theo tên, xem ảnh lá bài, correspondences, biểu tượng, và nghĩa xuôi/ngược đầy đủ. |
+| Tra cứu | Không | Duyệt từng bộ đúng thứ tự tarot, tìm theo tên, xem ảnh lá bài, correspondences, biểu tượng, và nghĩa xuôi/ngược đầy đủ. Pinch để đổi số cột hiển thị từ 1 tới 5. |
 | Học bài | Chỉ khi chấm | Rút một lá và một facet cụ thể, không lặp lá trong vòng 78 lá. Nhập câu trả lời rồi chấm theo rubric JSON. |
 | Hỏi đáp | Có | Hỏi tự do; app retrieve chunk từ embedding index trong máy rồi nhờ LLM tổng hợp. |
 | Cài đặt | — | Ngôn ngữ (vi/en), provider cho Q&A và chấm bài, API key + model từng provider, số chunk retrieve. |
@@ -18,6 +18,41 @@ mới cần mạng và API key do người dùng tự nhập.
 API key lưu bằng `flutter_secure_storage` (Android EncryptedSharedPreferences),
 không rời khỏi máy, và app gọi thẳng OpenAI, Anthropic hoặc Google — không có
 máy chủ trung gian.
+
+## Thiết kế
+
+Giao diện theo hệ neubrutalism trong `DESIGN.md` ở gốc repo: viền 3px, đổ bóng
+cứng lệch 4px không blur, màu phẳng độ bão hòa cao, không gradient, chữ đậm
+viết hoa. Hỗ trợ đầy đủ cả light và dark — ở dark, màu viền và bóng đổi sang
+gần trắng, vì viền đen trên nền tối thì không nhìn thấy.
+
+`lib/src/theme.dart` giữ token dưới dạng ThemeExtension `NeuTokens`, còn
+`lib/src/widgets/neu.dart` cung cấp các primitive mà mọi màn hình dựng từ đó
+(`NeuBox`, `NeuButton`, `NeuIconButton`, `NeuChip`, `NeuHeading`, `NeuSection`,
+`NeuField`). Không chỗ nào hard-code viền hay bóng.
+
+Giao diện chỉ dùng icon vector, không dùng emoji. Năm biểu tượng bộ bài được vẽ
+bằng path vector trong `lib/src/widgets/suit_glyph.dart` — Material không có
+gươm, chén hay đồng xu, còn icon nguyên tố thì chỉ nói lên correspondence chứ
+không phải bản thân bộ bài.
+
+Bảng màu: vàng `#FFEB3B`, đỏ `#FF5252`, xanh dương `#2196F3`, thêm xanh lá
+`#3DDC84` và tím `#B47CFF` để năm bộ phân biệt được. Màu bộ theo nguyên tố —
+lửa đỏ, nước xanh dương, khí vàng, đất xanh lá — tím dành cho Ẩn Chính.
+
+## Zoom lưới bài
+
+Lưới tra cứu hiển thị 1 tới 5 lá mỗi hàng. Pinch để đổi, hoặc dùng nút tăng
+giảm trên thanh tiêu đề; lựa chọn được lưu lại.
+
+Pinch nối qua `Listener` thô chứ không dùng callback scale của
+`GestureDetector`: scale recognizer tranh chấp với drag recognizer của GridView
+trong gesture arena và thua, nên pinch âm thầm không chạy.
+`test/grid_zoom_test.dart` phủ ca này — chính nó bắt được lỗi.
+
+Chiều cao ô tính từ chiều rộng thật qua `LayoutBuilder`, nên ảnh lá bài không
+bị cắt ở bất kỳ số cột nào; `childAspectRatio` cố định không làm được điều đó
+cho cả dải 1..5 cột.
 
 ## Yêu cầu
 
@@ -55,7 +90,7 @@ Bundle khoảng 16 MB. Đây là dữ liệu sinh ra nên không commit.
 ```bash
 cd mobile
 flutter pub get
-flutter test                       # 17 test: parity embedding, thứ tự bộ bài, assets
+flutter test                       # 22 test: parity embedding, thứ tự bộ bài, assets, zoom lưới
 flutter run                        # trên máy hoặc emulator đang kết nối
 flutter build apk --release --split-per-abi
 ```

@@ -11,7 +11,7 @@ themselves.
 
 | Tab | Needs an API key | What it does |
 | --- | --- | --- |
-| Browse | No | Walk each suit in traditional deck order, search by name, view card art, correspondences, symbols, and the full upright/reversed meanings. |
+| Browse | No | Walk each suit in traditional deck order, search by name, view card art, correspondences, symbols, and the full upright/reversed meanings. Pinch the grid to show anywhere from 1 to 5 cards per row. |
 | Study | Only to grade | Draw one card and one specific facet, never repeating a card within a cycle of 78. Write an answer and have it graded against a JSON rubric. |
 | Ask | Yes | Freeform questions; the app retrieves chunks from the on-device embedding index, then asks an LLM to synthesize. |
 | Settings | — | Language (vi/en), providers for Q&A and grading, API key and model per provider, retrieval depth. |
@@ -19,6 +19,43 @@ themselves.
 API keys are stored with `flutter_secure_storage` (Android
 EncryptedSharedPreferences), never leave the device, and the app calls OpenAI,
 Anthropic, or Google directly — there is no server in between.
+
+## Visual design
+
+The UI follows the neubrutalist system in `DESIGN.md` at the repository root:
+3px borders, hard 4px offset shadows with no blur, flat high-saturation fills,
+no gradients anywhere, and heavy uppercase typography. Light and dark are both
+fully supported - dark mode flips the border and shadow colour to near-white,
+because a black border is invisible against a dark background.
+
+`lib/src/theme.dart` owns the tokens as a `NeuTokens` ThemeExtension, and
+`lib/src/widgets/neu.dart` provides the primitives every screen is built from
+(`NeuBox`, `NeuButton`, `NeuIconButton`, `NeuChip`, `NeuHeading`, `NeuSection`,
+`NeuField`). Nothing hard-codes a border or shadow.
+
+The UI uses vector icons only, never emoji. The five suit marks are drawn as
+vector paths in `lib/src/widgets/suit_glyph.dart` - Material has no sword,
+chalice or pentacle, and element icons would name the correspondence rather
+than the suit.
+
+Palette: yellow `#FFEB3B`, red `#FF5252`, blue `#2196F3`, plus green `#3DDC84`
+and violet `#B47CFF` so the five suits stay distinguishable. Suits are coloured
+by element - fire red, water blue, air yellow, earth green - with violet
+reserved for the Major Arcana.
+
+## Grid zoom
+
+The browse grid shows 1 to 5 cards per row. Pinch to change it, or use the
+stepper in the app bar; the choice persists in preferences.
+
+The pinch is wired through a raw `Listener` rather than `GestureDetector`'s
+scale callbacks: a scale recognizer competes with the GridView's own drag
+recognizer in the gesture arena and loses, so the pinch silently never fires.
+`test/grid_zoom_test.dart` covers this - it is the test that caught it.
+
+Tile height is computed from the real tile width via `LayoutBuilder`, so the
+artwork is never cropped at any column count; a fixed `childAspectRatio` cannot
+hold across 1..5 columns.
 
 ## Requirements
 
@@ -56,7 +93,7 @@ The bundle is roughly 16 MB. It is generated, so it is not committed.
 ```bash
 cd mobile
 flutter pub get
-flutter test                       # 17 tests: embedding parity, deck order, assets
+flutter test                       # 22 tests: embedding parity, deck order, assets, grid zoom
 flutter run                        # on a connected device or emulator
 flutter build apk --release --split-per-abi
 ```

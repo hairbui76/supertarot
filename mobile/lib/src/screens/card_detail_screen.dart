@@ -3,47 +3,105 @@ import 'package:flutter/material.dart';
 import '../app_scope.dart';
 import '../l10n/strings.dart';
 import '../models/tarot_card.dart';
-import '../widgets/section_block.dart';
+import '../theme.dart';
+import '../widgets/neu.dart';
 
 /// Full card reference: art, correspondences, and the upright/reversed halves
 /// on their own tabs so a long meaning never buries the one you came for.
-class CardDetailScreen extends StatelessWidget {
+class CardDetailScreen extends StatefulWidget {
   const CardDetailScreen({super.key, required this.card});
 
   final TarotCard card;
 
   @override
+  State<CardDetailScreen> createState() => _CardDetailScreenState();
+}
+
+class _CardDetailScreenState extends State<CardDetailScreen> {
+  int _tab = 0;
+
+  @override
   Widget build(BuildContext context) {
     final Strings strings = AppScope.stringsOf(context);
+    final NeuTokens neu = context.neu;
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(card.name),
-          bottom: TabBar(
-            tabs: <Widget>[
-              Tab(text: strings.overview),
-              Tab(text: '⬆️ ${strings.upright}'),
-              Tab(text: '⬇️ ${strings.reversed}'),
-            ],
+    final List<(IconData, String, Color)> tabs = <(IconData, String, Color)>[
+      (Icons.auto_awesome, strings.overview, neu.yellow),
+      (Icons.arrow_upward, strings.upright, neu.green),
+      (Icons.arrow_downward, strings.reversed, neu.red),
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 0, 8),
+          child: NeuIconButton(
+            icon: Icons.arrow_back,
+            size: 40,
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ),
-        body: TabBarView(
-          children: <Widget>[
-            _OverviewTab(card: card, strings: strings),
-            _CardOrientationTab(
-              card: card,
-              strings: strings,
-              orientation: CardOrientation.upright,
+        leadingWidth: 64,
+        title: Text(widget.card.name.toUpperCase()),
+      ),
+      body: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+            child: Row(
+              children: <Widget>[
+                for (int i = 0; i < tabs.length; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(width: 10),
+                  Expanded(
+                    child: NeuBox(
+                      color: _tab == i
+                          ? tabs[i].$3
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                      shadow: _tab == i,
+                      borderWidth: 2,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      onTap: () => setState(() => _tab = i),
+                      child: Column(
+                        children: <Widget>[
+                          Icon(tabs[i].$1, size: 17, color: neu.line),
+                          const SizedBox(height: 3),
+                          Text(
+                            tabs[i].$2.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: neu.line,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-            _CardOrientationTab(
-              card: card,
-              strings: strings,
-              orientation: CardOrientation.reversed,
-            ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: switch (_tab) {
+              0 => _OverviewTab(card: widget.card, strings: strings),
+              1 => _CardOrientationTab(
+                  card: widget.card,
+                  strings: strings,
+                  orientation: CardOrientation.upright,
+                ),
+              _ => _CardOrientationTab(
+                  card: widget.card,
+                  strings: strings,
+                  orientation: CardOrientation.reversed,
+                ),
+            },
+          ),
+        ],
       ),
     );
   }
@@ -57,94 +115,114 @@ class _OverviewTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final List<(String, String, String)> facts = <(String, String, String)>[
-      ('🃏', strings.type, card.type),
-      ('🌿', strings.element, card.element),
-      ('🔮', strings.astrology, card.astrology),
-      ('❓', strings.yesNo, card.yesNo),
-    ].where(((String, String, String) item) => item.$3.isNotEmpty).toList();
+    final NeuTokens neu = context.neu;
+    final List<(IconData, String, String)> facts = <(IconData, String, String)>[
+      (Icons.style, strings.type, card.type),
+      (Icons.eco, strings.element, card.element),
+      (Icons.nightlight, strings.astrology, card.astrology),
+      (Icons.help_outline, strings.yesNo, card.yesNo),
+    ].where(((IconData, String, String) item) => item.$3.isNotEmpty).toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 36),
       children: <Widget>[
         Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.asset(
-              card.assetPath,
-              height: 320,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          child: NeuBox(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            padding: const EdgeInsets.all(8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Image.asset(
+                card.assetPath,
+                height: 320,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 26),
         if (facts.isNotEmpty) ...<Widget>[
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 9,
+            runSpacing: 9,
             children: <Widget>[
-              for (final (String icon, String label, String value) in facts)
-                InfoChip(label: '$icon $label: $value'),
+              for (final (IconData icon, String label, String value) in facts)
+                NeuChip(label: '$label: $value', icon: icon),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 26),
         ],
         if (card.shortMeaning.isNotEmpty ||
             card.shortReversedMeaning.isNotEmpty) ...<Widget>[
-          Text(
-            '✨ ${strings.shortMeaning}',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-            ),
+          NeuHeading(
+            icon: Icons.bolt,
+            title: strings.shortMeaning,
+            color: neu.yellow,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           if (card.shortMeaning.isNotEmpty)
-            SectionBlock(
-              icon: '⬆️',
+            NeuSection(
+              icon: Icons.arrow_upward,
               title: strings.upright,
               body: card.shortMeaning,
+              color: neu.green,
             ),
           if (card.shortReversedMeaning.isNotEmpty)
-            SectionBlock(
-              icon: '⬇️',
+            NeuSection(
+              icon: Icons.arrow_downward,
               title: strings.reversed,
               body: card.shortReversedMeaning,
+              color: neu.red,
             ),
         ],
         if (card.description.isNotEmpty)
-          SectionBlock(
-            icon: '🖼️',
+          NeuSection(
+            icon: Icons.image,
             title: strings.cardDescription,
             body: card.description,
+            color: neu.blue,
           ),
         if (card.symbols.isNotEmpty) ...<Widget>[
-          Text(
-            '🔍 ${strings.symbols}',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-            ),
+          NeuHeading(
+            icon: Icons.search,
+            title: strings.symbols,
+            color: neu.violet,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           for (final CardSymbol symbol in card.symbols)
             Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: RichText(
-                text: TextSpan(
-                  style: theme.textTheme.bodyMedium,
-                  children: <TextSpan>[
-                    const TextSpan(text: '• '),
-                    TextSpan(
-                      text: symbol.name,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(top: 7, right: 10),
+                    decoration: BoxDecoration(
+                      color: neu.violet,
+                      border: Border.all(color: neu.line, width: 2),
                     ),
-                    if (symbol.meaning.isNotEmpty)
-                      TextSpan(text: ': ${symbol.meaning}'),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        children: <TextSpan>[
+                          TextSpan(
+                            text: symbol.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          if (symbol.meaning.isNotEmpty)
+                            TextSpan(text: ': ${symbol.meaning}'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -166,64 +244,89 @@ class _CardOrientationTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    final NeuTokens neu = context.neu;
     final CardSection section = card.section(orientation);
     final List<String> keywords = card.keywords(orientation);
+    final Color accent =
+        orientation == CardOrientation.upright ? neu.green : neu.red;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 36),
       children: <Widget>[
         if (keywords.isNotEmpty) ...<Widget>[
-          Text(
-            '🏷️ ${strings.keywords}',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-            ),
+          NeuHeading(
+            icon: Icons.sell,
+            title: strings.keywords,
+            color: accent,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 9,
+            runSpacing: 9,
             children: <Widget>[
               for (final String keyword in keywords)
-                InfoChip(label: keyword, emphasis: true),
+                NeuChip(label: keyword, color: accent, selected: true),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 26),
         ],
         if (section.description.isNotEmpty)
-          SectionBlock(
-            icon: '📖',
+          NeuSection(
+            icon: Icons.menu_book,
             title: strings.meaning,
             body: section.description,
+            color: accent,
           ),
         if (section.love.isNotEmpty)
-          SectionBlock(icon: '❤️', title: strings.love, body: section.love),
+          NeuSection(
+            icon: Icons.favorite,
+            title: strings.love,
+            body: section.love,
+            color: neu.red,
+          ),
         if (section.career.isNotEmpty)
-          SectionBlock(icon: '💼', title: strings.career, body: section.career),
+          NeuSection(
+            icon: Icons.work,
+            title: strings.career,
+            body: section.career,
+            color: neu.blue,
+          ),
         if (section.finances.isNotEmpty)
-          SectionBlock(
-            icon: '💰',
+          NeuSection(
+            icon: Icons.payments,
             title: strings.finances,
             body: section.finances,
+            color: neu.green,
           ),
         if (section.feelings.isNotEmpty)
-          SectionBlock(
-            icon: '💭',
+          NeuSection(
+            icon: Icons.psychology,
             title: strings.feelings,
             body: section.feelings,
+            color: neu.violet,
           ),
         if (section.actions.isNotEmpty)
-          SectionBlock(
-            icon: '🎯',
+          NeuSection(
+            icon: Icons.bolt,
             title: strings.actions,
             body: section.actions,
+            color: neu.yellow,
           ),
         if (section.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 40),
-            child: Center(child: Text(strings.noCardsFound)),
+            child: Center(
+              child: NeuBox(
+                color: neu.red,
+                child: Text(
+                  strings.noCardsFound,
+                  style: TextStyle(
+                    color: neu.onAccent,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
           ),
       ],
     );

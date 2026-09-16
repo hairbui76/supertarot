@@ -1,12 +1,19 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../models/tarot_card.dart';
+import '../widgets/suit_glyph.dart';
 import 'embedding_index.dart';
 
 /// The five deck sections, in traditional order. `typeEn`/`typeVi` are the
 /// values the crawler writes into each card's `type` field.
+///
+/// [symbol] and [accent] give each suit its own identity in the UI. The
+/// symbol is the suit's own object - staff, chalice, blade, coin - not its
+/// element. The accent does follow the element: fire red, water blue, air
+/// yellow, earth green, with violet reserved for the Major Arcana.
 class SuitDefinition {
   const SuitDefinition({
     required this.key,
@@ -14,7 +21,8 @@ class SuitDefinition {
     required this.typeVi,
     required this.labelEn,
     required this.labelVi,
-    required this.emoji,
+    required this.symbol,
+    required this.accent,
   });
 
   final String key;
@@ -22,7 +30,8 @@ class SuitDefinition {
   final String typeVi;
   final String labelEn;
   final String labelVi;
-  final String emoji;
+  final SuitSymbol symbol;
+  final Color accent;
 
   String typeFor(String language) => language == 'vi' ? typeVi : typeEn;
 
@@ -36,7 +45,8 @@ const List<SuitDefinition> suitDefinitions = <SuitDefinition>[
     typeVi: 'Bộ Ẩn Chính',
     labelEn: 'Major Arcana',
     labelVi: 'Ẩn Chính',
-    emoji: '🃏',
+    symbol: SuitSymbol.majorArcana,
+    accent: Color(0xFFB47CFF),
   ),
   SuitDefinition(
     key: 'wands',
@@ -44,7 +54,8 @@ const List<SuitDefinition> suitDefinitions = <SuitDefinition>[
     typeVi: 'Gậy',
     labelEn: 'Wands',
     labelVi: 'Gậy',
-    emoji: '🪄',
+    symbol: SuitSymbol.wand,
+    accent: Color(0xFFFF5252),
   ),
   SuitDefinition(
     key: 'cups',
@@ -52,7 +63,8 @@ const List<SuitDefinition> suitDefinitions = <SuitDefinition>[
     typeVi: 'Cốc',
     labelEn: 'Cups',
     labelVi: 'Cốc',
-    emoji: '🥤',
+    symbol: SuitSymbol.cup,
+    accent: Color(0xFF2196F3),
   ),
   SuitDefinition(
     key: 'swords',
@@ -60,7 +72,8 @@ const List<SuitDefinition> suitDefinitions = <SuitDefinition>[
     typeVi: 'Kiếm',
     labelEn: 'Swords',
     labelVi: 'Kiếm',
-    emoji: '🗡️',
+    symbol: SuitSymbol.sword,
+    accent: Color(0xFFFFEB3B),
   ),
   SuitDefinition(
     key: 'pentacles',
@@ -68,7 +81,8 @@ const List<SuitDefinition> suitDefinitions = <SuitDefinition>[
     typeVi: 'Tiền Vàng',
     labelEn: 'Pentacles',
     labelVi: 'Tiền Vàng',
-    emoji: '🪙',
+    symbol: SuitSymbol.pentacle,
+    accent: Color(0xFF3DDC84),
   ),
 ];
 

@@ -219,7 +219,8 @@ Provider note: `SUPERTAROT_QA_PROVIDER` hỗ trợ `auto`, `openai`, `anthropic`
 App Flutter đóng gói toàn bộ dữ liệu tarot vào APK. Tra cứu, rút bài học và retrieval chạy offline; chỉ diễn giải/chấm bài bằng AI mới cần mạng và API key người dùng tự nhập trong tab Cài đặt.
 
 - API key lưu bằng `flutter_secure_storage` (Android EncryptedSharedPreferences), gọi thẳng OpenAI/Anthropic/Google, không qua máy chủ trung gian.
-- Bốn tab: Tra cứu (78 lá theo thứ tự bộ bài), Học bài (rút không lặp + chấm rubric), Hỏi đáp (Q&A trên embedding index), Cài đặt.
+- Bốn tab: Tra cứu (78 lá theo thứ tự bộ bài, pinch để đổi 1-5 cột), Học bài (rút không lặp + chấm rubric), Hỏi đáp (Q&A trên embedding index), Cài đặt.
+- UI theo hệ neubrutalism trong `DESIGN.md`: token ở `lib/src/theme.dart` (`NeuTokens`), primitive ở `lib/src/widgets/neu.dart`. Chỉ dùng icon vector, không emoji; 5 biểu tượng bộ bài vẽ tay trong `lib/src/widgets/suit_glyph.dart`.
 - Logic port 1-1 từ Python: `deck_order.dart` ← `learning/deck_order.py`, `hash_embedder.dart` ← `HashEmbeddingProvider`, `study_service.dart` ← `learning/study.py`, `grading_service.dart` ← `learning/verification.py` + `app/grading.py`, `qa_service.dart` ← `app/qa.py`.
 - `HashEmbedder` phải sinh vector giống hệt Python, nếu không query không cùng không gian với index đã bundle. `test/hash_embedder_test.dart` chốt parity bằng vector tham chiếu.
 

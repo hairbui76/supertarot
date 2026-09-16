@@ -4,7 +4,9 @@ import '../app_scope.dart';
 import '../l10n/strings.dart';
 import '../models/reference_chunk.dart';
 import '../services/qa_service.dart';
-import '../widgets/section_block.dart';
+import '../theme.dart';
+import '../widgets/markup_text.dart';
+import '../widgets/neu.dart';
 
 /// Freeform tarot Q&A. Retrieval runs on device; only the written answer needs
 /// a provider key.
@@ -72,6 +74,7 @@ class _AskScreenState extends State<AskScreen> {
   @override
   Widget build(BuildContext context) {
     final Strings strings = AppScope.stringsOf(context);
+    final NeuTokens neu = context.neu;
 
     return Column(
       children: <Widget>[
@@ -80,50 +83,45 @@ class _AskScreenState extends State<AskScreen> {
               ? _EmptyState(strings: strings)
               : ListView.builder(
                   controller: _scroll,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                   itemCount: _turns.length,
                   itemBuilder: (BuildContext context, int index) =>
-                      _TurnView(turn: _turns[index], strings: strings),
+                      _TurnView(turn: _turns[index]),
                 ),
         ),
         if (_busy)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                const SizedBox(width: 10),
-                Text(strings.thinking),
-              ],
+            padding: const EdgeInsets.only(bottom: 10),
+            child: NeuChip(
+              label: strings.thinking,
+              icon: Icons.hourglass_top,
+              color: neu.yellow,
+              selected: true,
             ),
           ),
         SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
                 Expanded(
-                  child: TextField(
+                  child: NeuField(
                     controller: _question,
+                    hintText: strings.askPlaceholder,
                     minLines: 1,
                     maxLines: 4,
                     onSubmitted: (_) => _ask(),
-                    decoration:
-                        InputDecoration(hintText: strings.askPlaceholder),
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _busy ? null : _ask,
-                  icon: const Icon(Icons.send_rounded),
+                const SizedBox(width: 10),
+                NeuIconButton(
+                  icon: Icons.send,
+                  color: neu.yellow,
+                  size: 52,
                   tooltip: strings.send,
+                  onPressed: _busy ? null : _ask,
                 ),
               ],
             ),
@@ -141,20 +139,70 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    final NeuTokens neu = context.neu;
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
+        padding: const EdgeInsets.symmetric(horizontal: 28),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('🔮', style: theme.textTheme.displaySmall),
-            const SizedBox(height: 16),
+            // Stacked offset squares: a flat, gradient-free "3D" motif built
+            // from the same border and shadow primitives as everything else.
+            SizedBox(
+              height: 118,
+              width: 118,
+              child: Stack(
+                children: <Widget>[
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: NeuBox(
+                      color: neu.blue,
+                      width: 78,
+                      height: 78,
+                      padding: EdgeInsets.zero,
+                      child: const SizedBox.shrink(),
+                    ),
+                  ),
+                  Positioned(
+                    left: 24,
+                    top: 24,
+                    child: NeuBox(
+                      color: neu.red,
+                      width: 78,
+                      height: 78,
+                      padding: EdgeInsets.zero,
+                      child: const SizedBox.shrink(),
+                    ),
+                  ),
+                  Positioned(
+                    left: 40,
+                    top: 40,
+                    child: NeuBox(
+                      color: neu.yellow,
+                      width: 78,
+                      height: 78,
+                      padding: EdgeInsets.zero,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.auto_awesome,
+                        size: 34,
+                        color: neu.onAccent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 34),
             Text(
               strings.askIntro,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: TextStyle(
+                color: neu.line,
+                fontWeight: FontWeight.w700,
+                height: 1.5,
               ),
             ),
           ],
@@ -167,8 +215,7 @@ class _EmptyState extends StatelessWidget {
 class _Turn {
   const _Turn._({required this.isQuestion, required this.text, this.result});
 
-  factory _Turn.question(String text) =>
-      _Turn._(isQuestion: true, text: text);
+  factory _Turn.question(String text) => _Turn._(isQuestion: true, text: text);
 
   factory _Turn.answer(QaResult result) =>
       _Turn._(isQuestion: false, text: result.answer, result: result);
@@ -179,28 +226,29 @@ class _Turn {
 }
 
 class _TurnView extends StatelessWidget {
-  const _TurnView({required this.turn, required this.strings});
+  const _TurnView({required this.turn});
 
   final _Turn turn;
-  final Strings strings;
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    final NeuTokens neu = context.neu;
 
     if (turn.isQuestion) {
       return Align(
         alignment: Alignment.centerRight,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12, left: 40),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            turn.text,
-            style: TextStyle(color: theme.colorScheme.onPrimaryContainer),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 14, left: 36),
+          child: NeuBox(
+            color: neu.yellow,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Text(
+              turn.text,
+              style: TextStyle(
+                color: neu.onAccent,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ),
       );
@@ -209,29 +257,28 @@ class _TurnView extends StatelessWidget {
     final List<ReferenceChunk> chunks =
         turn.result?.chunks ?? const <ReferenceChunk>[];
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16, right: 24),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          MarkupText(turn.text),
-          if (chunks.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: <Widget>[
-                for (final ReferenceChunk chunk in chunks.take(5))
-                  InfoChip(label: chunk.cardName),
-              ],
-            ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18, right: 28),
+      child: NeuBox(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            MarkupText(turn.text),
+            if (chunks.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: <Widget>[
+                  for (final ReferenceChunk chunk in chunks.take(5))
+                    NeuChip(label: chunk.cardName, dense: true),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
