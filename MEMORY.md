@@ -26,6 +26,10 @@
   - Quét toàn bộ staged diff không thấy pattern `sk-`, `ghp_`, `sk-ant-`, `AIza`, hay Telegram token
   - Push `main` thành công; workflow `Release` xanh và release-please đã mở PR `chore(main): release 1.0.0`
   - Workflow `CI` trên `main` xanh sau 1m52s: compile Python, build index, sinh assets, analyze, test đều pass trên Linux
+- README chuyển sang song ngữ, bản chính tiếng Anh: `README.md` (EN) + `README.vi.md` (VI), `mobile/README.md` (EN) + `mobile/README.vi.md` (VI), có dòng chuyển ngữ ở đầu mỗi file. `CONTRIBUTING.md` vẫn tiếng Việt.
+- Nhân dịp viết lại: sửa chỗ README nói "cache/output đã có sẵn trong data/" vì `data/embeddings/` giờ không commit — thêm bước build index trước khi smoke test, và mô tả rõ thư mục nào commit, thư mục nào sinh ra.
+- Workflow release: rút gọn message lỗi khi thiếu `ANDROID_KEYSTORE_BASE64` và thêm `keytool -list` ngay sau khi giải mã keystore để fail sớm thay vì lỗi Gradle khó đọc.
+- Đã verify base64 round-trip của keystore khớp bit-perfect và alias/password mở được, vì job `apk` chưa chạy thật lần nào.
 - Còn lại: PR release 1.0.0 chưa merge nên job `apk` chưa chạy lần nào. CI trên PR do release-please tạo ở trạng thái `action_required` vì PR được tạo bằng GITHUB_TOKEN.
 
 ## 2026-09-16

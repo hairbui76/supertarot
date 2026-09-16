@@ -69,12 +69,12 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::ANDROID_KEYSTORE_BASE64 is not set. Without it the"\
-                 "release APK would be signed with a throwaway debug key and"\
-                 "users could not upgrade over a previous install."
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set. Without it the release APK would be signed with a throwaway debug key, and users could not upgrade over a previous install."
             exit 1
           fi
           printf '%s' "$KEYSTORE_BASE64" | base64 -d > mobile/android/supertarot-release.jks
+          # Fail here rather than several steps later with an opaque Gradle error.
+          keytool -list -keystore mobile/android/supertarot-release.jks -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null
           {
             echo "storePassword=$STORE_PASSWORD"
             echo "keyPassword=$KEY_PASSWORD"

@@ -1,73 +1,80 @@
 # SuperTarot Mobile (Android)
 
-Flutter app đóng gói toàn bộ dữ liệu tarot của repo vào APK. Tra cứu 78 lá,
-rút bài học, và retrieval đều chạy offline; chỉ phần diễn giải/chấm bài bằng
-AI mới cần mạng và API key do người dùng tự nhập.
+*Read this in [Tiếng Việt](README.vi.md).*
 
-## Tính năng
+A Flutter app that bundles the repository's entire tarot dataset into the APK.
+Browsing all 78 cards, drawing study questions, and retrieval all run offline;
+only AI explanation and grading need the network and an API key the user enters
+themselves.
 
-| Tab | Cần API key | Mô tả |
+## Features
+
+| Tab | Needs an API key | What it does |
 | --- | --- | --- |
-| Tra cứu | Không | Duyệt theo bộ đúng thứ tự tarot, tìm theo tên, xem ảnh lá bài, correspondences, biểu tượng, nghĩa xuôi/ngược đầy đủ. |
-| Học bài | Chỉ khi chấm | Rút một lá + một facet cụ thể, không lặp lá trong vòng 78 lá. Nhập câu trả lời rồi chấm theo rubric JSON. |
-| Hỏi đáp | Có | Hỏi tự do; app retrieve chunk từ embedding index trong máy rồi nhờ LLM tổng hợp. |
-| Cài đặt | — | Ngôn ngữ (vi/en), provider cho Q&A và chấm bài, API key + model từng provider, số chunk retrieve. |
+| Browse | No | Walk each suit in traditional deck order, search by name, view card art, correspondences, symbols, and the full upright/reversed meanings. |
+| Study | Only to grade | Draw one card and one specific facet, never repeating a card within a cycle of 78. Write an answer and have it graded against a JSON rubric. |
+| Ask | Yes | Freeform questions; the app retrieves chunks from the on-device embedding index, then asks an LLM to synthesize. |
+| Settings | — | Language (vi/en), providers for Q&A and grading, API key and model per provider, retrieval depth. |
 
-API key lưu bằng `flutter_secure_storage` (Android EncryptedSharedPreferences),
-chỉ nằm trên máy, và app gọi thẳng tới OpenAI / Anthropic / Google — không có
-máy chủ trung gian.
+API keys are stored with `flutter_secure_storage` (Android
+EncryptedSharedPreferences), never leave the device, and the app calls OpenAI,
+Anthropic, or Google directly — there is no server in between.
 
-## Yêu cầu
+## Requirements
 
-- Flutter stable (đã kiểm với 3.41.9)
-- Android SDK + JDK 17
-- Python 3.10+ ở repo gốc (để sinh assets)
+- Flutter stable (verified with 3.41.9)
+- Android SDK and JDK 17
+- Python 3.10+ at the repository root, to generate the assets
 
-## Sinh assets từ dữ liệu repo
+## Generate the assets
 
-Chạy từ thư mục gốc của repo, **bắt buộc** sau mỗi lần dữ liệu tarot hoặc
-embedding index thay đổi:
+Run from the repository root. This is **required** after any change to the tarot
+data or the embedding index:
 
 ```bash
+python -m learning.embeddings build --provider hash --lang all
 python mobile/tools/prepare_assets.py
 ```
 
-Script này ghi vào `mobile/assets/`:
+Neither step needs third-party packages or an API key.
 
-- `data/cards_{en,vi}.json` — 78 lá đã sort theo thứ tự bộ bài, VI đã backfill
-  metadata từ EN.
-- `data/index_{en,vi}.json` — metadata chunk (id, card, orientation, facet,
-  title, text), không kèm vector.
-- `data/index_{en,vi}.f32` — vector float32 little-endian, phẳng, `n × dims`.
-  Tách nhị phân để app không phải parse ~1.2 triệu số JSON lúc khởi động.
-- `images/*.jpg` — 78 ảnh lá bài.
+`prepare_assets.py` writes into `mobile/assets/`:
 
-Tổng bundle ~16 MB.
+- `data/cards_{en,vi}.json` — all 78 cards in deck order, with the Vietnamese
+  set backfilled with metadata from the English one.
+- `data/index_{en,vi}.json` — chunk metadata (id, card, orientation, facet,
+  title, text), without vectors.
+- `data/index_{en,vi}.f32` — a flat little-endian float32 blob, `n × dims`.
+  Keeping the vectors binary means startup does not parse ~1.2 million JSON
+  numbers.
+- `images/*.jpg` — the 78 card images.
 
-## Chạy và build
+The bundle is roughly 16 MB. It is generated, so it is not committed.
+
+## Run and build
 
 ```bash
 cd mobile
 flutter pub get
-flutter test                       # 17 test: parity embedding, thứ tự bộ bài, assets
-flutter run                        # chạy trên máy/emulator đang kết nối
+flutter test                       # 17 tests: embedding parity, deck order, assets
+flutter run                        # on a connected device or emulator
 flutter build apk --release --split-per-abi
 ```
 
-APK nằm ở `mobile/build/app/outputs/flutter-apk/`:
+APKs land in `mobile/build/app/outputs/flutter-apk/`:
 
-- `app-arm64-v8a-release.apk` (~26 MB) — hầu hết điện thoại Android hiện nay
-- `app-armeabi-v7a-release.apk` (~24 MB) — máy 32-bit cũ
-- `app-x86_64-release.apk` (~27 MB) — emulator
+- `app-arm64-v8a-release.apk` (~26 MB) — current Android phones
+- `app-armeabi-v7a-release.apk` (~24 MB) — older 32-bit devices
+- `app-x86_64-release.apk` (~27 MB) — emulators
 
-`flutter build apk --release` (không `--split-per-abi`) tạo APK fat ~57 MB
-chứa cả ba ABI.
+`flutter build apk --release` without `--split-per-abi` produces a single fat
+APK of about 57 MB containing all three ABIs.
 
-## Ký release
+## Release signing
 
-Cấu hình ký đọc từ `android/key.properties`, file này cùng `*.jks` bị
-`.gitignore` loại trừ. Nếu thiếu, build release tự quay về debug key — vẫn cài
-sideload được nhưng không publish hay update in-place được.
+Signing is read from `android/key.properties`, which along with `*.jks` is
+excluded by `.gitignore`. Without it a release build falls back to the debug
+key — still sideloadable, but not publishable and not upgradable in place.
 
 ```bash
 keytool -genkeypair -v -keystore android/supertarot-release.jks \
@@ -82,62 +89,81 @@ keyAlias=supertarot
 storeFile=../supertarot-release.jks
 ```
 
-Giữ keystore cẩn thận: mất nó thì không thể update app đã cài bằng key cũ.
+Keep the keystore safe: losing it means you can no longer update an app that
+was installed with it.
 
-## Kiến trúc
+CI signs releases from repository secrets — see
+[CONTRIBUTING.md](../CONTRIBUTING.md).
+
+## Versioning
+
+`pubspec.yaml` carries `version: X.Y.Z # x-release-please-version` and is
+rewritten by release-please. Do not edit that line by hand.
+
+`android/app/build.gradle.kts` derives `versionCode` from the semver:
+`1.2.3` → `(1×10000 + 2×100 + 3) × 10000 = 102030000`.
+
+The bottom four digits are deliberately left at zero: `--split-per-abi` makes
+Flutter add `abiCode × 1000` (armeabi-v7a 1, arm64-v8a 2, x86_64 4) so each ABI
+gets a distinct code. Numbering any finer would let two different releases share
+a `versionCode`. Limits: major ≤ 20, minor and patch ≤ 99.
+
+## Architecture
 
 ```text
 lib/
-├── main.dart                        # entry point, dựng AppServices rồi runApp
+├── main.dart                        # entry point: build AppServices, then runApp
 └── src/
-    ├── app_scope.dart               # AppServices + InheritedNotifier cho SettingsStore
-    ├── theme.dart                   # Material 3, seed tím + accent vàng, light/dark
-    ├── l10n/strings.dart            # copy UI cho vi/en
+    ├── app_scope.dart               # AppServices + InheritedNotifier for SettingsStore
+    ├── theme.dart                   # Material 3, violet seed with gold accent, light/dark
+    ├── l10n/strings.dart            # UI copy for vi/en
     ├── models/
-    │   ├── deck_order.dart          # port của learning/deck_order.py
-    │   ├── tarot_card.dart          # schema lá bài
-    │   ├── reference_chunk.dart     # chunk đã retrieve + score
-    │   └── study_draw.dart          # StudyDraw và GradeResult
+    │   ├── deck_order.dart          # port of learning/deck_order.py
+    │   ├── tarot_card.dart          # card schema
+    │   ├── reference_chunk.dart     # a retrieved chunk plus its score
+    │   └── study_draw.dart          # StudyDraw and GradeResult
     ├── data/
-    │   ├── hash_embedder.dart       # port của HashEmbeddingProvider
-    │   ├── embedding_index.dart     # load .json + .f32, cosine search có filter
-    │   ├── tarot_repository.dart    # cache card/index theo ngôn ngữ, định nghĩa bộ bài
-    │   └── settings_store.dart      # prefs + secure storage cho API key
+    │   ├── hash_embedder.dart       # port of HashEmbeddingProvider
+    │   ├── embedding_index.dart     # loads .json + .f32, filtered cosine search
+    │   ├── tarot_repository.dart    # per-language cache, suit definitions
+    │   └── settings_store.dart      # prefs plus secure storage for API keys
     ├── services/
-    │   ├── llm_client.dart          # REST adapter OpenAI/Anthropic/Google
-    │   ├── study_service.dart       # port của learning/study.py
-    │   ├── grading_service.dart     # port của learning/verification.py + app/grading.py
-    │   └── qa_service.dart          # port của app/qa.py
-    ├── screens/                     # home (4 tab), browse, card detail, study, ask, settings
+    │   ├── llm_client.dart          # REST adapters for OpenAI/Anthropic/Google
+    │   ├── study_service.dart       # port of learning/study.py
+    │   ├── grading_service.dart     # port of learning/verification.py + app/grading.py
+    │   └── qa_service.dart          # port of app/qa.py
+    ├── screens/                     # home (4 tabs), browse, card detail, study, ask, settings
     └── widgets/section_block.dart   # SectionBlock, MarkupText, InfoChip
 ```
 
-## Ràng buộc parity với Python
+## Parity with the Python side
 
-`HashEmbedder` phải sinh vector **giống hệt** `HashEmbeddingProvider` trong
-`learning/embeddings.py`, nếu không vector truy vấn sẽ không cùng không gian
-với index đã bundle. Hai điểm dễ sai:
+`HashEmbedder` must produce **exactly** the same vectors as
+`HashEmbeddingProvider` in `learning/embeddings.py`, or query vectors will not
+share a space with the bundled index. Two things are easy to get wrong:
 
-- Python `re.findall(r"\w+", ...)` theo Unicode; `\w` của Dart chỉ ASCII nên
-  phải viết rõ `[\p{L}\p{N}_]+` để tách tiếng Việt giống nhau.
-- `int.from_bytes(digest, "big")` là số 64-bit không dấu, không vừa `int` có
-  dấu của Dart; phải lấy modulo theo từng byte thay vì ép kiểu.
+- Python's `re.findall(r"\w+", ...)` is Unicode-aware; Dart's `\w` is ASCII
+  only, so the classes are spelled out as `[\p{L}\p{N}_]+` to tokenize
+  Vietnamese identically.
+- `int.from_bytes(digest, "big")` is an unsigned 64-bit value that does not fit
+  a signed Dart `int`, so the modulo is taken byte by byte instead of casting.
 
-`test/hash_embedder_test.dart` chốt parity bằng vector tham chiếu sinh từ
-Python. Nếu test đó đỏ, đừng sửa kỳ vọng — sửa code.
+`test/hash_embedder_test.dart` pins this with reference vectors generated from
+Python. If that test goes red, fix the code, not the expectation.
 
-## Lưu ý về chất lượng retrieval
+## A note on retrieval quality
 
-Index đang bundle được build bằng provider `hash` (`hash-word-v1`), tức là
-bag-of-words chứ không phải semantic thật. Truy vấn một lá có thể trả về lá
-anh em trước (`Queen of Cups` → `Knight of Cups`) — app và bot Telegram đều
-như vậy vì dùng chung index. Muốn tốt hơn thì build lại index bằng OpenAI rồi
-chạy lại `prepare_assets.py`:
+The bundled index is built with the `hash` provider (`hash-word-v1`), which is
+bag-of-words rather than genuinely semantic. Querying one card can surface a
+sibling first (`Queen of Cups` → `Knight of Cups`); the Telegram bot behaves the
+same way because it uses the same index. For better results, rebuild with
+OpenAI and regenerate the assets:
 
 ```bash
 python -m learning.embeddings build --provider openai --lang all
 python mobile/tools/prepare_assets.py
 ```
 
-Lưu ý khi đó vector query phải gọi API embedding thay vì hash — hiện app chưa
-làm việc này, nên đổi provider index sẽ cần thêm bước ở `EmbeddingIndex`.
+Note that query vectors would then have to come from the embedding API rather
+than the hash function. The app does not do that yet, so switching the index
+provider needs an additional step in `EmbeddingIndex`.

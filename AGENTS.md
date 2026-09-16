@@ -467,7 +467,7 @@ cd mobile && flutter pub get && flutter test
 flutter build apk --release --split-per-abi
 ```
 
-Ký release đọc `mobile/android/key.properties` (gitignored); thiếu file thì fallback debug key. Chi tiết trong `mobile/README.md`.
+Ký release đọc `mobile/android/key.properties` (gitignored); thiếu file thì fallback debug key. Chi tiết trong `mobile/README.md` (bản tiếng Việt: `mobile/README.vi.md`).
 
 ---
 
