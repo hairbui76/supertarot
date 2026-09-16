@@ -6,7 +6,7 @@
 - If a change modifies structure, schemas, runtime behavior, or adds/removes logic, also update `CLAUDE.md` and `AGENTS.md`.
 - Keep entries concise: date, intent, files touched, verification.
 
-## 2026-09-17
+## 2026-09-16
 
 - Thêm zoom lưới bài 1-5 cột và chuyển toàn bộ UI app sang neubrutalism theo `DESIGN.md`.
 - Zoom: `SettingsStore.gridColumns` (clamp 1..5, lưu prefs), pinch trên lưới, kèm nút tăng/giảm trên app bar cho dễ thấy.
@@ -18,7 +18,12 @@
 - Màu bộ theo nguyên tố: lửa đỏ, nước xanh dương, khí vàng, đất xanh lá, tím cho Ẩn Chính.
 - Tách `MarkupText` ra `lib/src/widgets/markup_text.dart`, xóa `section_block.dart`.
 - Phần Execution Rules user gửi kèm viết cho landing page web (Navbar/Hero/Pricing/Testimonials/Footer, thẻ `<head>`, Tailwind CDN, Open Graph) nên không áp dụng cho app Flutter; chỉ áp dụng phần visual style. Cũng giữ nguyên song ngữ vi/en thay vì ép toàn bộ text sang tiếng Anh, vì app có toggle ngôn ngữ và dữ liệu tarot có bản tiếng Việt.
-- DESIGN.md tự mâu thuẫn ở mục Do's/Don'ts ("No pure black", "saturation cap 80%") so với chính spec neubrutalism trong cùng file; ưu tiên spec của style.
+- DESIGN.md tự mâu thuẫn ở mục Do's/Don'ts ("No pure black", "saturation cap 80%") và Components ("1px border stroke", "subtle shadow 0 2px 12px rgba") so với chính spec neubrutalism trong cùng file; ưu tiên spec của style.
+- Đã viết lại `DESIGN.md` theo yêu cầu bỏ phần landing page cho đỡ nhầm về sau:
+  - Bỏ hết nội dung landing/web: "Ideal for landing pages, saas", hero split-screen, feature zig-zag, CSS Grid 1280px, z-index sticky-nav, mobile collapse 768px, và các Don't về `h-screen`, picsum.photos, lorem ipsum, AI copywriting clichés.
+  - Sửa luôn các chỗ tự mâu thuẫn vì chúng cũng gây nhầm: bỏ "No pure black" và "saturation cap 80%", chốt radius 8px (Elevation cũ ghi "sharp corners 0px" trái với Shapes 8px), viết lại Components theo đúng cái đã implement (3px border, bóng cứng 4px) thay vì boilerplate 1px border + bóng mờ.
+  - Thêm mục Scope nói rõ đây là style reference cho app Flutter trong `mobile/`, không phải blueprint trang web, và code (`theme.dart`) mới là source of truth nếu hai bên lệch nhau.
+  - Thêm bảng surface light/dark, quy tắc dark mode đổi màu viền/bóng sang gần trắng, mục Icons, và block `tokens:` trong front matter khớp `NeuTokens`.
 - Emulator: GlazeWM tile cửa sổ làm emulator chết liên tục. Cách chạy ổn định là `emulator.exe` qua background task của harness rồi `glazewm command set-floating` ngay sau đó. Launch bằng `(cmd &)` trong Bash thì process bị kill.
 - Verification:
   - `flutter analyze` — no issues
