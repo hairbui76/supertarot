@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/hairbui76/supertarot/compare/v1.2.0...v1.3.0) (2026-09-16)
+
+
+### Features
+
+* **mobile:** nền icon màu be và logo trước chữ SUPERTAROT ([2d19aae](https://github.com/hairbui76/supertarot/commit/2d19aae1c7be3057e2d452c1ea2b50c7e86ac0f4))
+
 ## [1.2.0](https://github.com/hairbui76/supertarot/compare/v1.1.0...v1.2.0) (2026-09-16)
 
 
