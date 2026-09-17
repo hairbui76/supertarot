@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/hairbui76/supertarot/compare/v1.6.0...v1.6.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **web:** trang luôn lấy bản mới khi có mạng, theme mặc định sáng ([b14db55](https://github.com/hairbui76/supertarot/commit/b14db55d782b0ae745a1aaba226a671053363d9b))
+
 ## [1.6.0](https://github.com/hairbui76/supertarot/compare/v1.5.0...v1.6.0) (2026-09-17)
 
 
