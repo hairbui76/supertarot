@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/hairbui76/supertarot/compare/v1.5.0...v1.6.0) (2026-09-17)
+
+
+### Features
+
+* **web:** thêm Bốc bài 3 lá, đổi Rút bài thành Kiểm tra ([240369b](https://github.com/hairbui76/supertarot/commit/240369bab6e7a5511577f5e2976e5a894e8004de))
+
 ## [1.5.0](https://github.com/hairbui76/supertarot/compare/v1.4.2...v1.5.0) (2026-09-16)
 
 
