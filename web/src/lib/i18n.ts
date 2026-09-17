@@ -9,7 +9,8 @@ export interface Strings {
   tagline: string;
   metaDescription: string;
   browse: string;
-  draw: string;
+  quiz: string;
+  spread: string;
   chooseSuit: string;
   cardCount: string;
   search: string;
@@ -38,10 +39,17 @@ export interface Strings {
   previous: string;
   next: string;
   backToSuits: string;
-  drawTitle: string;
-  drawIntro: string;
-  drawButton: string;
-  drawAgain: string;
+  quizTitle: string;
+  quizIntro: string;
+  quizButton: string;
+  quizAgain: string;
+  spreadTitle: string;
+  spreadIntro: string;
+  spreadButton: string;
+  spreadAgain: string;
+  spreadEmpty: string;
+  spreadScroll: string;
+  correspondences: string;
   question: string;
   hint: string;
   showAnswer: string;
@@ -53,7 +61,7 @@ export interface Strings {
   theme: string;
   getApp: string;
   appNote: string;
-  sourceNote: string;
+  author: string;
   installTitle: string;
   installIos: string;
   installButton: string;
@@ -68,7 +76,8 @@ export const STRINGS: Record<Lang, Strings> = {
       'Tra cứu ý nghĩa đầy đủ 78 lá bài tarot: nghĩa xuôi và ngược, tình yêu, ' +
       'sự nghiệp, tài chính, cảm xúc, hành động, biểu tượng và chiêm tinh.',
     browse: 'Tra cứu',
-    draw: 'Rút bài',
+    quiz: 'Kiểm tra',
+    spread: 'Bốc bài',
     chooseSuit: 'Chọn bộ bài',
     cardCount: 'lá',
     search: 'Tìm lá bài',
@@ -97,12 +106,21 @@ export const STRINGS: Record<Lang, Strings> = {
     previous: 'Lá trước',
     next: 'Lá sau',
     backToSuits: 'Tất cả bộ bài',
-    drawTitle: 'Rút bài học',
-    drawIntro:
-      'Mỗi lần rút một lá và một khía cạnh cụ thể. Không lặp lá nào cho tới ' +
-      'khi đi hết 78 lá.',
-    drawButton: 'Rút một lá',
-    drawAgain: 'Rút lá khác',
+    quizTitle: 'Kiểm tra',
+    quizIntro:
+      'Mỗi lần rút một lá và hỏi một khía cạnh cụ thể. Không lặp lá nào cho ' +
+      'tới khi đi hết 78 lá.',
+    quizButton: 'Rút một lá',
+    quizAgain: 'Rút lá khác',
+    spreadTitle: 'Bốc bài',
+    spreadIntro:
+      'Bốc ngẫu nhiên 3 lá cho quá khứ, hiện tại và tương lai. Mỗi lá có thể ' +
+      'ra xuôi hoặc ngược, ý nghĩa đặt cạnh nhau để đối chiếu.',
+    spreadButton: 'Bốc 3 lá',
+    spreadAgain: 'Bốc lại',
+    spreadEmpty: 'Bấm Bốc 3 lá để bắt đầu.',
+    spreadScroll: 'Vuốt ngang để xem đủ 3 lá',
+    correspondences: 'Tương ứng',
     question: 'Câu hỏi',
     hint: 'Gợi ý',
     showAnswer: 'Xem đáp án',
@@ -114,9 +132,9 @@ export const STRINGS: Record<Lang, Strings> = {
     theme: 'Đổi nền sáng/tối',
     getApp: 'Tải app Android',
     appNote:
-      'Bản web chỉ tra cứu và rút bài. Muốn hỏi đáp và chấm bài bằng AI thì ' +
+      'Bản web tra cứu, bốc bài và kiểm tra. Muốn hỏi đáp và chấm bài bằng AI thì ' +
       'dùng app Android.',
-    sourceNote: 'Dữ liệu từ labyrinthos.co',
+    author: 'Tác giả: Bùi Hải',
     installTitle: 'Cài SuperTarot lên màn hình chính',
     installIos:
       'Bấm nút Chia sẻ ở thanh dưới, rồi chọn Thêm vào MH chính. Mở từ đó ' +
@@ -131,7 +149,8 @@ export const STRINGS: Record<Lang, Strings> = {
       'Full meanings for all 78 tarot cards: upright and reversed, love, ' +
       'career, finances, feelings, actions, symbols and astrology.',
     browse: 'Browse',
-    draw: 'Draw',
+    quiz: 'Quiz',
+    spread: 'Spread',
     chooseSuit: 'Choose a suit',
     cardCount: 'cards',
     search: 'Search cards',
@@ -160,12 +179,21 @@ export const STRINGS: Record<Lang, Strings> = {
     previous: 'Previous',
     next: 'Next',
     backToSuits: 'All suits',
-    drawTitle: 'Study draw',
-    drawIntro:
+    quizTitle: 'Quiz',
+    quizIntro:
       'Each draw asks about one card and one specific facet. No card repeats ' +
       'until all 78 have come up.',
-    drawButton: 'Draw a card',
-    drawAgain: 'Draw another',
+    quizButton: 'Draw a card',
+    quizAgain: 'Draw another',
+    spreadTitle: 'Three-card spread',
+    spreadIntro:
+      'Draw three random cards for past, present and future. Each can land ' +
+      'upright or reversed, with the meanings side by side to compare.',
+    spreadButton: 'Draw 3 cards',
+    spreadAgain: 'Draw again',
+    spreadEmpty: 'Press Draw 3 cards to begin.',
+    spreadScroll: 'Swipe sideways to see all 3 cards',
+    correspondences: 'Correspondences',
     question: 'Question',
     hint: 'Hint',
     showAnswer: 'Show the answer',
@@ -177,9 +205,9 @@ export const STRINGS: Record<Lang, Strings> = {
     theme: 'Toggle light and dark',
     getApp: 'Get the Android app',
     appNote:
-      'The web version browses and draws. For AI Q&A and answer grading, use ' +
+      'The web version browses, draws spreads and quizzes. For AI Q&A and answer grading, use ' +
       'the Android app.',
-    sourceNote: 'Data from labyrinthos.co',
+    author: 'By Bùi Hải',
     installTitle: 'Install SuperTarot on your home screen',
     installIos:
       'Tap the Share button in the toolbar, then Add to Home Screen. ' +

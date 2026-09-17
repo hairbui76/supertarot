@@ -7,7 +7,7 @@ Tự deploy lên GitHub Pages mỗi lần push vào `main`.
 
 **Không có AI.** Hỏi đáp và chấm bài nằm ở app Android, vì hai phần đó cần API
 key và gọi nhà cung cấp. Bản web chỉ làm những gì chạy offline và miễn phí: tra
-cứu, tìm kiếm, rút bài.
+cứu, tìm kiếm, bốc bài và kiểm tra.
 
 ## Có gì
 
@@ -16,7 +16,9 @@ cứu, tìm kiếm, rút bài.
 | `/<lang>/` | Hero, năm bộ bài theo đúng thứ tự tarot, và lưới tìm kiếm đủ 78 lá. |
 | `/<lang>/suit/<suit>/` | Một bộ, từ Ace tới King. |
 | `/<lang>/card/<slug>/` | Một lá: ảnh, correspondences, nghĩa cô đọng, mô tả, biểu tượng, và đầy đủ hai chiều xuôi/ngược. Prerender sẵn nên index được. |
-| `/<lang>/draw/` | Rút một lá và một facet, kèm gợi ý. Bấm để xem đáp án tham chiếu, vì không có phần chấm. |
+| `/<lang>/spread/` | Bốc bài: 3 lá ngẫu nhiên khác nhau cho quá khứ, hiện tại, tương lai, mỗi lá xuôi hoặc ngược. Ý nghĩa đặt trong bảng 3 cột, mỗi phần một hàng tiêu đề riêng (từ khóa, nghĩa cô đọng, ý nghĩa, tình yêu, sự nghiệp, tài chính, cảm xúc, hành động, tương ứng). Trên điện thoại bảng giữ 3 cột và vuốt ngang, nhãn từng phần dính mép trái. Lần bốc gần nhất được giữ khi tải lại trang. |
+| `/<lang>/quiz/` | Kiểm tra: rút một lá và một facet, kèm gợi ý. Bấm để xem đáp án tham chiếu, vì không có phần chấm. |
+| `/<lang>/draw/` | URL cũ của trang kiểm tra. Chỉ là trang redirect, giữ lại để link đã chia sẻ và shortcut của PWA đã cài không hỏng; không có trong sitemap. |
 
 `<lang>` là `vi` hoặc `en`; mỗi trang đều trỏ sang bản ngôn ngữ kia bằng
 `hreflang`. Đường dẫn gốc redirect về `/vi/`.
@@ -54,7 +56,7 @@ Không có embedding index: ở đây không có AI, và tìm kiếm là theo t�
 cd web
 npm install
 npm run dev      # http://localhost:4321/
-npm test         # logic rút bài
+npm test         # logic kiểm tra, bốc bài, banner cài đặt
 npm run check    # astro check
 npm run build    # output tĩnh vào web/dist
 npm run preview

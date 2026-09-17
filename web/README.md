@@ -7,7 +7,7 @@ browser. It is deployed to GitHub Pages on every push to `main`.
 
 **No AI.** Q&A and answer grading live in the Android app, because they need an
 API key and a provider call. The web build only does what works offline and for
-free: browse, search, and draw.
+free: browse, search, draw a spread, and quiz yourself.
 
 ## What it does
 
@@ -16,7 +16,9 @@ free: browse, search, and draw.
 | `/<lang>/` | Hero, the five suits in traditional deck order, and a searchable grid of all 78 cards. |
 | `/<lang>/suit/<suit>/` | One suit, Ace through King. |
 | `/<lang>/card/<slug>/` | A card: art, correspondences, concise meaning, description, symbols, and the full upright and reversed halves. Prerendered, so it is indexable. |
-| `/<lang>/draw/` | Draw one card and one facet, with a hint. The reference answer is revealed on request, since there is no grader. |
+| `/<lang>/spread/` | Three-card spread: three different random cards for past, present and future, each upright or reversed. The meanings sit in a three-column table with one titled row per section (keywords, concise meaning, meaning, love, career, finances, feelings, actions, correspondences). On a phone the table keeps its three columns and scrolls sideways, with the section labels pinned left. The last spread survives a reload. |
+| `/<lang>/quiz/` | Quiz: one card and one facet, with a hint. The reference answer is revealed on request, since there is no grader. |
+| `/<lang>/draw/` | The quiz's old URL. A redirect stub, kept so shared links and the shortcuts of already-installed PWAs keep working; left out of the sitemap. |
 
 `<lang>` is `vi` or `en`; every page links to its counterpart with `hreflang`.
 The root path redirects to `/vi/`.
@@ -56,7 +58,7 @@ No embedding index: there is no AI here, and search is by card name.
 cd web
 npm install
 npm run dev      # http://localhost:4321/
-npm test         # the draw logic
+npm test         # quiz, spread and install-hint logic
 npm run check    # astro check
 npm run build    # static output into web/dist
 npm run preview
@@ -103,6 +105,12 @@ laptop.
 sitemap URL would point at the wrong origin.
 
 ## Shared logic
+
+`src/lib/spread.ts` draws the spread: a partial Fisher-Yates over the deck for
+three distinct cards, and a coin flip each for orientation. The random source is
+a parameter, so `test/spread.test.ts` can seed it and check that cards never
+repeat, that every card and both orientations are reachable, and that a saved
+spread which no longer matches the deck is discarded.
 
 `src/lib/study.ts` is a port of `learning/study.py`, and matches
 `mobile/lib/src/services/study_service.dart`: the same facet order, the same

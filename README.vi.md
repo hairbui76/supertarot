@@ -304,7 +304,7 @@ nếu không APK sẽ ship dữ liệu cũ. Chi tiết trong
 duyệt được, không cần cài gì và không cần API key:
 [tarot.hairbui76.id.vn](https://tarot.hairbui76.id.vn/).
 
-Web chỉ tra cứu, tìm kiếm và rút bài. Hỏi đáp và chấm bài vẫn nằm ở app Android
+Web chỉ tra cứu, tìm kiếm, bốc bài 3 lá và kiểm tra. Hỏi đáp và chấm bài vẫn nằm ở app Android
 vì cần API key.
 
 ```powershell

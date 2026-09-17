@@ -305,7 +305,7 @@ The card meanings are also published as a static site anyone can open in a
 browser, with no install and no API key:
 [tarot.hairbui76.id.vn](https://tarot.hairbui76.id.vn/).
 
-It browses, searches and draws. Q&A and answer grading stay in the Android app,
+It browses, searches, draws three-card spreads and quizzes. Q&A and answer grading stay in the Android app,
 because they need an API key.
 
 ```powershell

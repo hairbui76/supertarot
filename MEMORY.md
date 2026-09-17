@@ -8,6 +8,18 @@
 
 ## 2026-09-17
 
+- Web: bỏ dòng "Dữ liệu từ labyrinthos.co" ở chân trang (dữ liệu đã dịch lại), thay bằng tác giả Bùi Hải; thêm `<meta name="author">` và `author` trong JSON-LD trang lá bài. Hằng số ở `web/src/lib/site.ts`.
+- Đổi "Rút bài" thành "Kiểm tra" (en: Quiz), route `draw` → `quiz`. `/vi/draw/`, `/en/draw/` thành stub redirect trong `<head>` để link cũ và shortcut PWA đã cài không 404; sitemap lọc bỏ. Giữ key `supertarot-draw-<lang>` để không mất tiến độ.
+- Thêm "Bốc bài" (en: Spread) `/<lang>/spread/`: 3 lá ngẫu nhiên khác nhau, Quá khứ/Hiện tại/Tương lai, mỗi lá xuôi/ngược 50% (ảnh ngược xoay 180°). Bảng 3 cột kẻ viền, mỗi phần một hàng tiêu đề: từ khóa, nghĩa cô đọng, ý nghĩa, tình yêu, sự nghiệp, tài chính, cảm xúc, hành động, tương ứng. Điện thoại: bảng min-width 780px cuộn ngang, nhãn phần sticky, có dòng "Vuốt ngang". Lưu spread cuối vào localStorage.
+- Tự chọn (user không nói rõ): vị trí Quá khứ/Hiện tại/Tương lai và cho phép lá ngược.
+- Nav và hero trang chủ: Tra cứu · Bốc bài · Kiểm tra. Manifest PWA: 4 shortcut (bốc bài/kiểm tra × vi/en). Icon mới `cards`.
+- Không đổi app Android: app không có trang "Rút bài" (tab Học bài là bản kiểm tra có chấm AI).
+- Verification:
+  - `npm test` 27 pass (thêm `test/spread.test.ts` 7 test), `npm run check` 0 lỗi, build 175 trang
+  - Headless Chrome qua CDP: bảng 18 hàng (9 phần), `scrollWidth == clientWidth` ở 1280 và 390px, spread còn nguyên sau reload, nhãn phần dính trái khi cuộn ngang, `/en/draw/` → `/en/quiz/` và nút rút vẫn chạy, chân trang "By Bùi Hải"
+  - Sửa sau khi chụp: `scroll-margin-top` cho kết quả để header dính không che chip vị trí
+
+
 - Web thành PWA cài được — cách để người dùng iPhone có SuperTarot mà không cần bản iOS.
 - `@vite-pwa/astro` trong `web/astro.config.mjs`: manifest (standalone, beige, 2 shortcut rút bài vi/en), precache toàn bộ HTML/CSS/JS/icon; ảnh lá bài cache runtime `CacheFirst` với fallback `public/card-offline.svg`. Bỏ ảnh khỏi precache để lần vào đầu trên 4G không phải tải 6,6 MB.
 - `web/src/components/InstallHint.astro` + `web/src/lib/install.ts` (+ `test/install.test.ts`): nút Cài đặt trên Chromium, hướng dẫn Chia sẻ → Thêm vào MH chính trên iOS, ẩn trong in-app browser, khi standalone, hoặc đã đóng.

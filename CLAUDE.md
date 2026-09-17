@@ -62,9 +62,9 @@ supertarot/
 │   └── test/                      # parity embedding, deck order, offline assets
 ├── web/                           # Site tĩnh Astro (xem web/README.md)
 │   ├── tools/prepare_web_assets.py # Export data repo sang web/src/data + public
-│   ├── src/lib/                   # cards, i18n, icons, study (port của study.py)
-│   ├── src/pages/[lang]/          # home, suit, card, draw — prerender toàn bộ
-│   └── test/                      # test logic rút bài
+│   ├── src/lib/                   # cards, i18n, icons, study (port của study.py), spread, install
+│   ├── src/pages/[lang]/          # home, suit, card, spread, quiz — prerender toàn bộ
+│   └── test/                      # test kiểm tra, bốc bài, banner cài đặt
 ├── data/
 │   ├── raw/                       # HTML cache (tùy chọn)
 │   ├── embeddings/                # Local/prod embedding indexes
@@ -243,8 +243,10 @@ Ký release đọc từ `mobile/android/key.properties` (gitignored); thiếu fi
 
 Site Astro công bố ý nghĩa 78 lá cho trình duyệt, deploy lên GitHub Pages qua `.github/workflows/pages.yml` mỗi lần push `main`.
 
-- **Không có AI.** Hỏi đáp và chấm bài chỉ có ở app Android vì cần API key. Web chỉ tra cứu, tìm kiếm, rút bài.
-- Route: `/vi/` và `/en/`, mỗi ngôn ngữ có home, `suit/<key>`, `card/<slug>`, `draw`. Gốc `/` redirect về `/vi/`. Tổng 171 trang prerender.
+- **Không có AI.** Hỏi đáp và chấm bài chỉ có ở app Android vì cần API key. Web chỉ tra cứu, tìm kiếm, bốc bài và kiểm tra.
+- Route: `/vi/` và `/en/`, mỗi ngôn ngữ có home, `suit/<key>`, `card/<slug>`, `spread` (Bốc bài), `quiz` (Kiểm tra). Gốc `/` redirect về `/vi/`; `draw` là URL cũ của quiz, giờ chỉ redirect sang `quiz` và bị loại khỏi sitemap. Tổng 175 trang prerender.
+- Bốc bài (`web/src/lib/spread.ts`, test `web/test/spread.test.ts`): 3 lá khác nhau cho Quá khứ/Hiện tại/Tương lai, mỗi lá 50% ngược (ảnh xoay 180°). Bảng 3 cột, mỗi phần một hàng tiêu đề `colspan=3`; dưới 860px bảng giữ `min-width` và cuộn ngang, nhãn phần `position: sticky`. Lưu slug + chiều ở `localStorage` `supertarot-spread-<lang>`. Kiểm tra vẫn dùng key cũ `supertarot-draw-<lang>` để không mất tiến độ vòng 78 lá.
+- Không ghi nguồn labyrinthos.co trên web; chân trang, `<meta name="author">` và JSON-LD trang lá bài ghi tác giả Bùi Hải (`web/src/lib/site.ts`).
 - `web/tools/prepare_web_assets.py` sinh `web/src/data/cards_*.json`, `web/public/cards/*.jpg` và logo/favicon/og từ `mobile/icon/app_icon.png`. Tất cả gitignore, CI dựng lại. Không cần embedding index vì không có AI.
 - `web/src/lib/study.ts` là port của `learning/study.py`, khớp với `study_service.dart`. `web/test/study.test.ts` chốt vòng 78 lá không lặp.
 - `site` và `base` lấy từ `actions/configure-pages` lúc build, không hard-code, vì Pages đang chạy qua custom domain.

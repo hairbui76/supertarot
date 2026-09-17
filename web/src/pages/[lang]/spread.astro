@@ -1,0 +1,499 @@
+---
+import Base from '../../layouts/Base.astro';
+import { cards, LANGS, type Lang } from '../../lib/cards';
+import { t } from '../../lib/i18n';
+import { icons } from '../../lib/icons';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const strings = t(lang);
+
+// Inlined like the quiz deck, so a spread needs no further requests and works
+// offline. Only what the table shows.
+const deck = cards(lang).map((card) => ({
+  name: card.name,
+  slug: card.slug,
+  card_image: card.card_image,
+  element: card.element,
+  astrology: card.astrology,
+  yes_no: card.yes_no,
+  upright_keywords: card.upright_keywords,
+  reversed_keywords: card.reversed_keywords,
+  short_meaning: card.short_meaning,
+  short_rev_meaning: card.short_rev_meaning,
+  upright: card.upright,
+  reversed: card.reversed,
+}));
+---
+
+<Base
+  lang={lang}
+  title={`${strings.spreadTitle} — ${strings.siteTitle}`}
+  description={strings.spreadIntro}
+  altPath="spread"
+>
+  <div class="wrap spread">
+    <h1>{strings.spreadTitle}</h1>
+    <p class="muted intro">{strings.spreadIntro}</p>
+
+    <button class="btn btn--spread" type="button" id="spread-draw">
+      <span class="btn__icon" set:html={icons.cards} />
+      <span id="spread-label">{strings.spreadButton}</span>
+    </button>
+
+    <p class="muted empty" id="spread-empty">{strings.spreadEmpty}</p>
+
+    <div id="spread-result" hidden>
+      <p class="scroll-hint muted">
+        <span set:html={icons.arrowRight} />
+        {strings.spreadScroll}
+      </p>
+      <div class="frame">
+        <div class="scroller">
+          <table class="spread-table">
+            <colgroup>
+              <col /><col /><col />
+            </colgroup>
+            <thead>
+              <tr id="spread-head"></tr>
+            </thead>
+            <tbody id="spread-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script
+    type="application/json"
+    id="spread-deck"
+    is:inline
+    set:html={JSON.stringify(deck)}
+  />
+</Base>
+
+<script>
+  import { keywordList, type CardSection, type Lang, type TarotCard } from '../../lib/cards';
+  import { t } from '../../lib/i18n';
+  import { icons } from '../../lib/icons';
+  import {
+    drawSpread,
+    restoreSpread,
+    saveSpread,
+    SPREAD_POSITIONS,
+    type SpreadCard,
+  } from '../../lib/spread';
+
+  const lang = (document.documentElement.lang === 'en' ? 'en' : 'vi') as Lang;
+  const strings = t(lang);
+  const root = (document.body.dataset.base ?? '/').replace(/\/$/, '');
+  const deck = JSON.parse(
+    document.getElementById('spread-deck')?.textContent ?? '[]',
+  ) as TarotCard[];
+
+  const KEY = `supertarot-spread-${lang}`;
+  const POSITION_COLOURS = ['var(--blue)', 'var(--yellow)', 'var(--violet)'];
+
+  const head = document.getElementById('spread-head')!;
+  const body = document.getElementById('spread-body')!;
+  const result = document.getElementById('spread-result') as HTMLElement;
+  const empty = document.getElementById('spread-empty') as HTMLElement;
+  const label = document.getElementById('spread-label')!;
+
+  type Row = {
+    label: string;
+    icon: string;
+    colour: string;
+    /** Returns a cell's content, or null when this card has nothing for it. */
+    cell: (item: SpreadCard) => Node | null;
+  };
+
+  function el<K extends keyof HTMLElementTagNameMap>(
+    tag: K,
+    className?: string,
+    text?: string,
+  ): HTMLElementTagNameMap[K] {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  }
+
+  function icon(markup: string, className: string): HTMLElement {
+    const span = el('span', className);
+    // Icons are trusted constants from icons.ts, never card data.
+    span.innerHTML = markup;
+    return span;
+  }
+
+  function paragraph(text: string | undefined): Node | null {
+    return text?.trim() ? el('p', undefined, text.trim()) : null;
+  }
+
+  function section(item: SpreadCard): CardSection | undefined {
+    return item.reversed ? item.card.reversed : item.card.upright;
+  }
+
+  function sectionField(key: keyof CardSection) {
+    return (item: SpreadCard) => paragraph(section(item)?.[key]);
+  }
+
+  const ROWS: Row[] = [
+    {
+      label: strings.keywords,
+      icon: icons.tag,
+      colour: 'var(--yellow)',
+      cell: (item) => {
+        const words = keywordList(
+          item.reversed ? item.card.reversed_keywords : item.card.upright_keywords,
+        );
+        if (!words.length) return null;
+        const list = el('ul', 'keywords');
+        for (const word of words) list.append(el('li', 'chip', word));
+        return list;
+      },
+    },
+    {
+      label: strings.shortMeaning,
+      icon: icons.sparkle,
+      colour: 'var(--violet)',
+      cell: (item) =>
+        paragraph(item.reversed ? item.card.short_rev_meaning : item.card.short_meaning),
+    },
+    { label: strings.meaning, icon: icons.book, colour: 'var(--blue)', cell: sectionField('description') },
+    { label: strings.love, icon: icons.heart, colour: 'var(--red)', cell: sectionField('love') },
+    { label: strings.career, icon: icons.briefcase, colour: 'var(--blue)', cell: sectionField('career') },
+    { label: strings.finances, icon: icons.coins, colour: 'var(--green)', cell: sectionField('finances') },
+    { label: strings.feelings, icon: icons.brain, colour: 'var(--violet)', cell: sectionField('feelings') },
+    { label: strings.actions, icon: icons.target, colour: 'var(--yellow)', cell: sectionField('actions') },
+    {
+      label: strings.correspondences,
+      icon: icons.moon,
+      colour: 'var(--green)',
+      cell: (item) => {
+        const facts = [
+          [strings.element, item.card.element],
+          [strings.astrology, item.card.astrology],
+          [strings.yesNo, item.card.yes_no],
+        ].filter(([, value]) => Boolean(value));
+        if (!facts.length) return null;
+        const list = el('dl', 'facts');
+        for (const [name, value] of facts) {
+          list.append(el('dt', undefined, name), el('dd', undefined, value));
+        }
+        return list;
+      },
+    },
+  ];
+
+  function headerCell(item: SpreadCard, index: number): HTMLTableCellElement {
+    const th = el('th');
+    th.scope = 'col';
+
+    const position = el('span', 'chip chip--fill position', SPREAD_POSITIONS[lang][index]);
+    position.style.background = POSITION_COLOURS[index];
+
+    const link = el('a', 'card-link');
+    link.href = `${root}/${lang}/card/${item.card.slug}/`;
+    const art = el('img', `art${item.reversed ? ' art--reversed' : ''}`);
+    art.src = `${root}/cards/${item.card.card_image}`;
+    art.alt = item.card.name;
+    art.width = 350;
+    art.height = 600;
+    link.append(art, el('span', 'card-name', item.card.name));
+
+    const orientation = el('span', 'chip chip--fill orientation');
+    orientation.style.background = item.reversed ? 'var(--red)' : 'var(--green)';
+    orientation.append(
+      icon(item.reversed ? icons.arrowDown : icons.arrowUp, 'orientation__icon'),
+      document.createTextNode(item.reversed ? strings.reversed : strings.upright),
+    );
+
+    th.append(position, link, orientation);
+    return th;
+  }
+
+  function render(spread: SpreadCard[]) {
+    head.replaceChildren(...spread.map(headerCell));
+
+    const rows: HTMLTableRowElement[] = [];
+    for (const row of ROWS) {
+      const cells = spread.map((item) => row.cell(item));
+      if (cells.every((cell) => cell === null)) continue;
+
+      const titleRow = el('tr', 'section-row');
+      const title = el('th');
+      title.colSpan = spread.length;
+      title.scope = 'colgroup';
+      const heading = el('span', 'heading section-heading');
+      const mark = icon(row.icon, 'heading__mark');
+      mark.style.background = row.colour;
+      heading.append(mark, el('span', 'heading__title', row.label));
+      title.append(heading);
+      titleRow.append(title);
+
+      const contentRow = el('tr', 'content-row');
+      for (const cell of cells) {
+        const td = el('td');
+        td.append(cell ?? el('span', 'muted', '—'));
+        contentRow.append(td);
+      }
+      rows.push(titleRow, contentRow);
+    }
+    body.replaceChildren(...rows);
+
+    result.hidden = false;
+    empty.hidden = true;
+    label.textContent = strings.spreadAgain;
+  }
+
+  function load(): SpreadCard[] | null {
+    try {
+      return restoreSpread(deck, JSON.parse(localStorage.getItem(KEY) ?? 'null'));
+    } catch {
+      return null;
+    }
+  }
+
+  document.getElementById('spread-draw')!.addEventListener('click', () => {
+    const spread = drawSpread(deck);
+    try {
+      localStorage.setItem(KEY, JSON.stringify(saveSpread(spread)));
+    } catch {
+      /* nothing to persist to; the spread just won't survive a reload */
+    }
+    render(spread);
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // A reload or a trip to a card page and back keeps the reading on screen.
+  const saved = load();
+  if (saved) render(saved);
+</script>
+
+<style>
+  .spread {
+    max-width: 1180px;
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    margin-bottom: 12px;
+  }
+
+  .intro {
+    margin: 0 0 24px;
+    max-width: 720px;
+  }
+
+  .btn--spread {
+    width: 100%;
+    max-width: 420px;
+    background: var(--violet);
+    font-size: 1.05rem;
+    padding: 16px;
+  }
+
+  .btn__icon {
+    display: grid;
+    place-items: center;
+  }
+
+  .btn__icon :global(svg) {
+    width: 20px;
+    height: 20px;
+  }
+
+  .empty {
+    margin: 18px 0 0;
+  }
+
+  #spread-result {
+    margin-top: 28px;
+    /* Scrolled to after a draw: clear the sticky site header, which is two
+       rows tall on a phone. */
+    scroll-margin-top: 150px;
+  }
+
+  /* The border and shadow sit on a frame that does not scroll, so the hard
+     shadow stays put while the table slides underneath on a phone. */
+  .frame {
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow);
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .scroller {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .spread-table {
+    width: 100%;
+    min-width: 780px;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .spread-table col {
+    width: calc(100% / 3);
+  }
+
+  /* Inner rules only: the frame already draws the outer border. */
+  .spread-table :global(th),
+  .spread-table :global(td) {
+    border: 2px solid var(--line);
+    vertical-align: top;
+    text-align: start;
+  }
+
+  .spread-table :global(tr > :first-child) {
+    border-inline-start: 0;
+  }
+
+  .spread-table :global(tr > :last-child) {
+    border-inline-end: 0;
+  }
+
+  .spread-table :global(thead th) {
+    border-top: 0;
+    padding: 16px;
+    background: var(--bg);
+  }
+
+  .spread-table :global(tbody tr:last-child td) {
+    border-bottom: 0;
+  }
+
+  .spread-table :global(.position) {
+    margin-bottom: 12px;
+  }
+
+  .spread-table :global(.card-link) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .spread-table :global(.art) {
+    width: min(150px, 100%);
+    height: auto;
+    border: 2px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+  }
+
+  /* A reversed card is shown the way it came out of the deck. */
+  .spread-table :global(.art--reversed) {
+    transform: rotate(180deg);
+  }
+
+  .spread-table :global(.card-name) {
+    font-weight: 900;
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  .spread-table :global(.orientation) {
+    display: flex;
+    width: max-content;
+    align-items: center;
+    gap: 4px;
+    margin: 12px auto 0;
+  }
+
+  .spread-table :global(.orientation__icon) {
+    display: grid;
+  }
+
+  .spread-table :global(.orientation__icon svg) {
+    width: 14px;
+    height: 14px;
+  }
+
+  .spread-table :global(.section-row th) {
+    padding: 10px 14px;
+    background: var(--bg);
+  }
+
+  /* Pinned to the left edge so a phone reader who has scrolled to the third
+     card still knows which section they are in. */
+  .spread-table :global(.section-heading) {
+    position: sticky;
+    left: 14px;
+    width: max-content;
+    margin: 0;
+  }
+
+  .spread-table :global(.content-row td) {
+    padding: 14px 16px 18px;
+    line-height: 1.6;
+  }
+
+  .spread-table :global(td p) {
+    margin: 0;
+  }
+
+  .spread-table :global(.keywords) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .spread-table :global(.keywords .chip) {
+    font-size: 0.72rem;
+    /* Vietnamese keywords run long; wrap inside the chip rather than
+       overflowing the column. */
+    white-space: normal;
+  }
+
+  .spread-table :global(.facts) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    margin: 0;
+  }
+
+  .spread-table :global(.facts dt) {
+    font-weight: 900;
+  }
+
+  .spread-table :global(.facts dd) {
+    margin: 0;
+  }
+
+  .scroll-hint {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .scroll-hint :global(svg) {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Below the table's minimum width the page would otherwise squeeze three
+     long paragraphs into slivers; it scrolls sideways instead, and says so. */
+  @media (max-width: 860px) {
+    .scroll-hint {
+      display: flex;
+    }
+  }
+</style>

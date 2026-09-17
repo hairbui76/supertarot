@@ -13,6 +13,7 @@ import {
 } from '../../../lib/cards';
 import { t } from '../../../lib/i18n';
 import { icons } from '../../../lib/icons';
+import { AUTHOR } from '../../../lib/site';
 
 export function getStaticPaths() {
   return LANGS.flatMap((lang) =>
@@ -82,6 +83,7 @@ const jsonLd = {
   description: summary,
   image: new URL(image, Astro.site).toString(),
   inLanguage: lang,
+  author: { '@type': 'Person', name: AUTHOR },
   isPartOf: {
     '@type': 'WebSite',
     name: strings.siteTitle,

@@ -46,9 +46,13 @@ const glyphKeys: Record<string, string> = {
             <span set:html={icons.book} class="btn__icon" />
             {strings.chooseSuit}
           </a>
-          <a class="btn btn--violet" href={href(base, lang, 'draw')}>
+          <a class="btn btn--violet" href={href(base, lang, 'spread')}>
+            <span set:html={icons.cards} class="btn__icon" />
+            {strings.spread}
+          </a>
+          <a class="btn btn--green" href={href(base, lang, 'quiz')}>
             <span set:html={icons.shuffle} class="btn__icon" />
-            {strings.draw}
+            {strings.quiz}
           </a>
         </div>
       </div>
@@ -138,6 +142,10 @@ const glyphKeys: Record<string, string> = {
 
   .btn--violet {
     background: var(--violet);
+  }
+
+  .btn--green {
+    background: var(--green);
   }
 
   /* Flat stacked squares: depth from offset and border only, no gradients. */

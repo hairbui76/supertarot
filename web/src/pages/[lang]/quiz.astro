@@ -1,0 +1,345 @@
+---
+import Base from '../../layouts/Base.astro';
+import { cards, LANGS, type Lang } from '../../lib/cards';
+import { t } from '../../lib/i18n';
+import { icons } from '../../lib/icons';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const strings = t(lang);
+
+// The deck is inlined so the draw works with no further requests. Only the
+// fields the draw needs, to keep the payload small.
+const deck = cards(lang).map((card) => ({
+  name: card.name,
+  slug: card.slug,
+  card_image: card.card_image,
+  type: card.type,
+  element: card.element,
+  astrology: card.astrology,
+  yes_no: card.yes_no,
+  description: card.description,
+  upright_keywords: card.upright_keywords,
+  upright: card.upright,
+  reversed: card.reversed,
+  symbols: card.symbols,
+}));
+---
+
+<Base
+  lang={lang}
+  title={`${strings.quizTitle} — ${strings.siteTitle}`}
+  description={strings.quizIntro}
+  altPath="quiz"
+>
+  <div class="wrap draw">
+    <h1>{strings.quizTitle}</h1>
+    <p class="muted intro">{strings.quizIntro}</p>
+
+    <div class="draw__bar">
+      <span class="chip chip--fill" style="background: var(--blue)" id="cycle"
+        >—</span
+      >
+      <button class="btn btn--reset" type="button" id="reset">
+        <span class="btn__icon" set:html={icons.rotate} />
+        {strings.resetCycle}
+      </button>
+    </div>
+
+    <button class="btn btn--draw" type="button" id="draw">
+      <span class="btn__icon" set:html={icons.shuffle} />
+      <span id="draw-label">{strings.quizButton}</span>
+    </button>
+
+    <article class="result neu" id="result" hidden>
+      <div class="result__head">
+        <img
+          class="result__art"
+          id="result-art"
+          src=""
+          alt=""
+          width="350"
+          height="600"
+        />
+        <div class="result__meta">
+          <h2 id="result-name"></h2>
+          <span class="chip chip--fill" style="background: var(--yellow)" id="result-facet"
+          ></span>
+          <a class="result__link" id="result-link" href="#">
+            {strings.openCard}
+            <span set:html={icons.arrowRight} />
+          </a>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="heading">
+          <span
+            class="heading__mark"
+            style="background: var(--blue)"
+            set:html={icons.help}
+          />
+          <span class="heading__title">{strings.question}</span>
+        </div>
+        <p id="result-question"></p>
+      </div>
+
+      <div class="block">
+        <div class="heading">
+          <span
+            class="heading__mark"
+            style="background: var(--yellow)"
+            set:html={icons.bulb}
+          />
+          <span class="heading__title">{strings.hint}</span>
+        </div>
+        <p id="result-hint"></p>
+      </div>
+
+      <button class="btn btn--answer" type="button" id="toggle-answer">
+        <span class="btn__icon" id="answer-icon" set:html={icons.eye} />
+        <span id="answer-label">{strings.showAnswer}</span>
+      </button>
+
+      <div class="block answer" id="answer-block" hidden>
+        <div class="heading">
+          <span
+            class="heading__mark"
+            style="background: var(--green)"
+            set:html={icons.book}
+          />
+          <span class="heading__title">{strings.answer}</span>
+        </div>
+        <p id="result-answer"></p>
+      </div>
+    </article>
+  </div>
+
+  <script
+    type="application/json"
+    id="deck-data"
+    is:inline
+    set:html={JSON.stringify(deck)}
+  />
+</Base>
+
+<script>
+  import { drawCard, emptyState, type DrawState } from '../../lib/study';
+  import type { Lang, TarotCard } from '../../lib/cards';
+  import { cycleLabel, t } from '../../lib/i18n';
+
+  const root = document.documentElement;
+  const lang = (root.lang === 'en' ? 'en' : 'vi') as Lang;
+  const strings = t(lang);
+  const base = document.body.dataset.base ?? '/';
+
+  const deck = JSON.parse(
+    document.getElementById('deck-data')?.textContent ?? '[]',
+  ) as TarotCard[];
+
+  const KEY = `supertarot-draw-${lang}`;
+
+  function load(): DrawState {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as DrawState;
+        if (Array.isArray(parsed.remaining) && Array.isArray(parsed.seen)) {
+          return parsed;
+        }
+      }
+    } catch {
+      /* private mode or corrupt value: start a fresh cycle */
+    }
+    return emptyState();
+  }
+
+  function save(state: DrawState) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch {
+      /* nothing to persist to */
+    }
+  }
+
+  let state = load();
+
+  const cycle = document.getElementById('cycle')!;
+  const result = document.getElementById('result') as HTMLElement;
+  const drawButton = document.getElementById('draw') as HTMLButtonElement;
+  const drawLabel = document.getElementById('draw-label')!;
+  const answerBlock = document.getElementById('answer-block') as HTMLElement;
+  const answerLabel = document.getElementById('answer-label')!;
+
+  function showCycle() {
+    const remaining = state.remaining.length || (state.seen.length ? 0 : deck.length);
+    cycle.textContent = cycleLabel(lang, state.cycle, remaining);
+  }
+
+  function draw() {
+    const result$ = drawCard(state, deck, lang);
+    save(state);
+
+    (document.getElementById('result-art') as HTMLImageElement).src =
+      `${base.replace(/\/$/, '')}/cards/${result$.card.card_image}`;
+    (document.getElementById('result-art') as HTMLImageElement).alt =
+      result$.card.name;
+    document.getElementById('result-name')!.textContent = result$.card.name;
+    document.getElementById('result-facet')!.textContent = result$.facetLabel;
+    document.getElementById('result-question')!.textContent = result$.question;
+    document.getElementById('result-hint')!.textContent = result$.hint;
+    document.getElementById('result-answer')!.textContent =
+      result$.answer || '—';
+    (document.getElementById('result-link') as HTMLAnchorElement).href =
+      `${base.replace(/\/$/, '')}/${lang}/card/${result$.card.slug}/`;
+
+    answerBlock.hidden = true;
+    answerLabel.textContent = strings.showAnswer;
+    result.hidden = false;
+    drawLabel.textContent = strings.quizAgain;
+    showCycle();
+    result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  drawButton.addEventListener('click', draw);
+
+  document.getElementById('toggle-answer')!.addEventListener('click', () => {
+    answerBlock.hidden = !answerBlock.hidden;
+    answerLabel.textContent = answerBlock.hidden
+      ? strings.showAnswer
+      : strings.hideAnswer;
+  });
+
+  document.getElementById('reset')!.addEventListener('click', () => {
+    state = emptyState();
+    save(state);
+    result.hidden = true;
+    drawLabel.textContent = strings.quizButton;
+    showCycle();
+  });
+
+  showCycle();
+</script>
+
+<style>
+  .draw {
+    max-width: 780px;
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    margin-bottom: 12px;
+  }
+
+  .intro {
+    margin: 0 0 24px;
+  }
+
+  .draw__bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .btn--reset {
+    background: var(--surface);
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+
+  .btn--draw {
+    width: 100%;
+    background: var(--violet);
+    font-size: 1.05rem;
+    padding: 16px;
+  }
+
+  .btn__icon {
+    display: grid;
+    place-items: center;
+  }
+
+  .btn__icon :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .result {
+    margin-top: 28px;
+    padding: 22px;
+  }
+
+  .result__head {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+
+  .result__art {
+    width: 110px;
+    height: auto;
+    flex: none;
+    border: 2px solid var(--line);
+    border-radius: 6px;
+  }
+
+  .result__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .result__meta h2 {
+    font-size: 1.4rem;
+    text-transform: uppercase;
+  }
+
+  .result__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .result__link :global(svg) {
+    width: 15px;
+    height: 15px;
+  }
+
+  .block {
+    margin-bottom: 20px;
+  }
+
+  .block p {
+    margin: 0;
+  }
+
+  .btn--answer {
+    background: var(--green);
+    width: 100%;
+  }
+
+  .answer {
+    margin-top: 20px;
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 560px) {
+    .result__head {
+      flex-direction: column;
+    }
+
+    .result__art {
+      width: 140px;
+    }
+  }
+</style>

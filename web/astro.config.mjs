@@ -28,8 +28,12 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
-      // The root is a redirect stub, not a page worth listing.
-      filter: (page) => new URL(page).pathname.replace(base, '/') !== '/',
+      // The root and the old /draw/ paths are redirect stubs, not pages worth
+      // listing.
+      filter: (page) => {
+        const path = new URL(page).pathname.replace(base, '/');
+        return path !== '/' && !/^\/(vi|en)\/draw\/$/.test(path);
+      },
     }),
     AstroPWA({
       // A content site should never show stale meanings: a new deploy takes
@@ -43,7 +47,7 @@ export default defineConfig({
         name: 'SuperTarot',
         short_name: 'SuperTarot',
         description:
-          'Tra cứu ý nghĩa 78 lá tarot và rút bài học, dùng được cả khi offline.',
+          'Tra cứu ý nghĩa 78 lá tarot, bốc bài và kiểm tra, dùng được cả khi offline.',
         lang: 'vi',
         dir: 'ltr',
         // The root redirects to whichever language the reader last used.
@@ -76,15 +80,27 @@ export default defineConfig({
         ],
         shortcuts: [
           {
-            name: 'Rút bài học',
-            short_name: 'Rút bài',
-            url: at('vi/draw/'),
+            name: 'Bốc bài',
+            short_name: 'Bốc bài',
+            url: at('vi/spread/'),
             icons: [{ src: at('icon-192.png'), sizes: '192x192' }],
           },
           {
-            name: 'Study draw',
-            short_name: 'Draw',
-            url: at('en/draw/'),
+            name: 'Kiểm tra',
+            short_name: 'Kiểm tra',
+            url: at('vi/quiz/'),
+            icons: [{ src: at('icon-192.png'), sizes: '192x192' }],
+          },
+          {
+            name: 'Three-card spread',
+            short_name: 'Spread',
+            url: at('en/spread/'),
+            icons: [{ src: at('icon-192.png'), sizes: '192x192' }],
+          },
+          {
+            name: 'Quiz',
+            short_name: 'Quiz',
+            url: at('en/quiz/'),
             icons: [{ src: at('icon-192.png'), sizes: '192x192' }],
           },
         ],
@@ -97,7 +113,7 @@ export default defineConfig({
         // mobile data - and is cached at runtime as cards are viewed instead.
         globPatterns: ['**/*.{html,css,js,png,svg,webmanifest,txt,xml}'],
         globIgnores: ['cards/**'],
-        // The draw pages inline the whole deck and weigh ~1.2 MB each.
+        // The quiz and spread pages inline the whole deck, ~1.2 MB each.
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         directoryIndex: 'index.html',
         // A multi-page site: every route is its own precached document, so a

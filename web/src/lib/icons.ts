@@ -18,6 +18,12 @@ export const icons: Record<string, string> = {
   close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
   arrowRight: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
   arrowLeft: svg('<path d="M19 12H5M11 18l-6-6 6-6"/>'),
+  // Three cards fanned side by side, for the spread.
+  cards: svg(
+    '<rect x="2" y="6" width="6" height="12" rx="1"/>' +
+      '<rect x="9" y="4" width="6" height="16" rx="1"/>' +
+      '<rect x="16" y="6" width="6" height="12" rx="1"/>',
+  ),
   arrowUp: svg('<path d="M12 19V5M6 11l6-6 6 6"/>'),
   arrowDown: svg('<path d="M12 5v14M18 13l-6 6-6-6"/>'),
   sparkle: svg(

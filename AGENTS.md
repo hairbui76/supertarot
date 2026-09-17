@@ -483,15 +483,19 @@ Ký release đọc `mobile/android/key.properties` (gitignored); thiếu file th
 
 **Nhiệm vụ:** Công bố ý nghĩa 78 lá cho trình duyệt, không cần cài gì và không cần API key.
 
-**Ranh giới rõ ràng:** web **không có AI**. Hỏi đáp và chấm bài cần API key nên chỉ tồn tại ở app Android. Web chỉ giữ những phần chạy được offline và miễn phí: tra cứu, tìm theo tên, rút bài. Trang rút bài hiện đáp án tham chiếu thay vì chấm.
+**Ranh giới rõ ràng:** web **không có AI**. Hỏi đáp và chấm bài cần API key nên chỉ tồn tại ở app Android. Web chỉ giữ những phần chạy được offline và miễn phí: tra cứu, tìm theo tên, bốc bài, kiểm tra. Trang kiểm tra hiện đáp án tham chiếu thay vì chấm.
 
 **Pipeline:** `web/tools/prepare_web_assets.py` đọc `data/output` + `data/images` qua `app.learn.load_cards_for_language()` và `sort_cards()`, ghi `web/src/data/cards_*.json` (kèm slug và chỉ số vị trí) và `web/public/cards/`. Nó cũng sinh logo/favicon/og từ `mobile/icon/app_icon.png` bằng decoder/encoder PNG tự viết trên thư viện chuẩn, để không kéo dependency ảnh chỉ vì ba file. Không sinh embedding index.
 
-**Route:** `/vi/` và `/en/` với home, `suit/<key>`, `card/<slug>`, `draw`; gốc `/` redirect về `/vi/`. 171 trang prerender, mỗi trang có canonical, `hreflang` chéo hai ngôn ngữ, Open Graph, và JSON-LD cho trang lá bài.
+**Route:** `/vi/` và `/en/` với home, `suit/<key>`, `card/<slug>`, `spread`, `quiz`; gốc `/` redirect về `/vi/`, `draw` (URL cũ của quiz) redirect sang `quiz`. 175 trang prerender, mỗi trang có canonical, `hreflang` chéo hai ngôn ngữ, Open Graph, và JSON-LD cho trang lá bài.
 
 **Logic dùng chung:** `web/src/lib/study.ts` là port thứ ba của `learning/study.py` (sau Dart). Cùng thứ tự facet, cùng câu chữ, cùng vòng 78 lá không lặp. `web/test/study.test.ts` chốt tính chất không lặp — thứ mà ảnh chụp màn hình không thể chứng minh.
 
 **PWA:** `@vite-pwa/astro` (Workbox `generateSW`) trong `web/astro.config.mjs`. Precache mọi HTML/CSS/JS/icon (~1,9 MB gzip) để cả site mở offline; ảnh `cards/` bị loại khỏi precache (6,6 MB JPEG không nén được) và cache `CacheFirst` khi xem, fallback `card-offline.svg`. `navigateFallback: null` vì đây là site nhiều trang, không phải SPA. `web/src/lib/install.ts` quyết định banner cài đặt (`prompt` cho Chromium, `ios` cho Safari iPhone/iPad, ẩn trong in-app browser và khi đã standalone); test ở `web/test/install.test.ts`. Icon PWA phải đặc (iOS tô nền trong suốt thành đen), bản maskable thu nhỏ còn 70%.
+
+**Bốc bài:** `web/src/lib/spread.ts` rút 3 lá khác nhau (Fisher-Yates từng phần) và tung đồng xu cho chiều; nguồn random là tham số để test seed được. Trang `spread.astro` inline deck, dựng bảng 3 cột bằng DOM (`textContent`, không `innerHTML` với dữ liệu lá bài), mỗi phần một hàng tiêu đề riêng, bỏ hàng nếu cả 3 lá đều trống. `restoreSpread()` bỏ spread đã lưu nếu slug không còn khớp deck.
+
+**Ghi công:** web không nhắc labyrinthos.co. Tác giả Bùi Hải nằm ở `web/src/lib/site.ts`, dùng cho chân trang, meta author và JSON-LD.
 
 **Deploy:** `.github/workflows/pages.yml` build và đẩy lên GitHub Pages. `site` và `base` lấy từ `actions/configure-pages` lúc build chứ không hard-code, vì tài khoản phục vụ Pages qua custom domain; `robots.txt` sinh từ `Astro.site` cùng lý do.
 
