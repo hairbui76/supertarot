@@ -6,6 +6,9 @@
  *
  * Dark mode flips the border and shadow to near-white. A black border against
  * a dark background is invisible, which would erase the whole style.
+ *
+ * Light is the default whatever the OS prefers; dark is only ever the reader's
+ * explicit choice through the toggle, stored as data-theme.
  */
 
 :root {
@@ -35,21 +38,12 @@
 }
 
 :root[data-theme='dark'] {
+  color-scheme: dark;
   --line: #f2f0e6;
   --shadow: #f2f0e6;
   --bg: #15151a;
   --surface: #232330;
   --muted: #a8a496;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --line: #f2f0e6;
-    --shadow: #f2f0e6;
-    --bg: #15151a;
-    --surface: #232330;
-    --muted: #a8a496;
-  }
 }
 
 *,
@@ -59,7 +53,7 @@
 }
 
 html {
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 body {

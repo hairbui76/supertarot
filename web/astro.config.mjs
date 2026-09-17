@@ -36,8 +36,8 @@ export default defineConfig({
       },
     }),
     AstroPWA({
-      // A content site should never show stale meanings: a new deploy takes
-      // over on the next navigation instead of waiting for a reload prompt.
+      // A new deploy's worker takes over by itself (src/sw.ts skips waiting);
+      // there is no reload prompt.
       registerType: 'autoUpdate',
       injectRegister: 'script-defer',
       base,
@@ -105,40 +105,20 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      // The worker is hand-written in src/sw.ts: pages go network-first,
+      // which generateSW cannot express alongside a precache of those pages.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectManifest: {
         // Every page is precached, so the whole reference works offline after
-        // the first visit. That is ~1.9 MB over the wire: the HTML gzips from
-        // 7.6 MB to 1.9 MB. Card art is left out of the precache on purpose -
-        // 6.6 MB of JPEG does not compress, and would be a heavy first visit on
-        // mobile data - and is cached at runtime as cards are viewed instead.
+        // the first visit: ~1.9 MB over the wire, since the HTML gzips from
+        // 7.6 MB. Card art is left out - 6.6 MB of JPEG does not compress -
+        // and is cached at runtime as cards are viewed instead.
         globPatterns: ['**/*.{html,css,js,png,svg,webmanifest,txt,xml}'],
-        globIgnores: ['cards/**'],
+        globIgnores: ['cards/**', 'sw.js'],
         // The quiz and spread pages inline the whole deck, ~1.2 MB each.
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-        directoryIndex: 'index.html',
-        // A multi-page site: every route is its own precached document, so a
-        // single SPA fallback document would be wrong.
-        navigateFallback: null,
-        cleanupOutdatedCaches: true,
-        runtimeCaching: [
-          {
-            urlPattern: ({ request, url }) =>
-              request.destination === 'image' && url.pathname.includes('/cards/'),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'card-art',
-              expiration: {
-                // The full deck, with headroom for renamed files across deploys.
-                maxEntries: 120,
-                maxAgeSeconds: 60 * 60 * 24 * 90,
-              },
-              cacheableResponse: { statuses: [0, 200] },
-              // Offline and never viewed: show a drawn placeholder rather than
-              // the browser's broken-image icon.
-              precacheFallback: { fallbackURL: at('card-offline.svg') },
-            },
-          },
-        ],
       },
     }),
   ],

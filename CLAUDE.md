@@ -250,7 +250,8 @@ Site Astro công bố ý nghĩa 78 lá cho trình duyệt, deploy lên GitHub Pa
 - `web/tools/prepare_web_assets.py` sinh `web/src/data/cards_*.json`, `web/public/cards/*.jpg` và logo/favicon/og từ `mobile/icon/app_icon.png`. Tất cả gitignore, CI dựng lại. Không cần embedding index vì không có AI.
 - `web/src/lib/study.ts` là port của `learning/study.py`, khớp với `study_service.dart`. `web/test/study.test.ts` chốt vòng 78 lá không lặp.
 - `site` và `base` lấy từ `actions/configure-pages` lúc build, không hard-code, vì Pages đang chạy qua custom domain.
-- PWA: cài được lên màn hình chính (banner `InstallHint.astro`, iOS hướng dẫn Chia sẻ → Thêm vào MH chính). `@vite-pwa/astro` precache toàn bộ trang để offline; ảnh lá bài chỉ cache khi xem, lá chưa xem hiện `card-offline.svg`. Icon PWA nền be đặc sinh bởi `prepare_web_assets.py`.
+- PWA: cài được lên màn hình chính (banner `InstallHint.astro`, iOS hướng dẫn Chia sẻ → Thêm vào MH chính). `@vite-pwa/astro` chế độ `injectManifest`, SW tự viết ở `web/src/sw.ts`: trang HTML **network-first** (fetch `cache: 'no-cache'`, timeout 4s rồi mới dùng cache), CSS/JS/icon precache cache-first. Precache toàn bộ trang chỉ để dùng offline; ảnh lá bài chỉ cache khi xem, lá chưa xem hiện `card-offline.svg`. Không quay lại precache-first cho HTML: Cloudflare cho trình duyệt giữ `sw.js` 4 giờ nên người dùng cũ sẽ kẹt ở bản deploy trước. Icon PWA nền be đặc sinh bởi `prepare_web_assets.py`.
+- Theme mặc định luôn sáng, không theo `prefers-color-scheme`; chỉ tối khi người dùng bấm nút (lưu `supertarot-theme=dark`).
 - UI theo cùng hệ neubrutalism trong `DESIGN.md`, token ở `web/src/styles/global.css`, icon SVG inline ở `web/src/lib/icons.ts`.
 
 ```bash

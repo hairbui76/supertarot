@@ -55,8 +55,7 @@ const ogImage = image
     <meta property="og:image" content={ogImage} />
     <meta property="og:locale" content={lang === 'vi' ? 'vi_VN' : 'en_US'} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#dfc79a" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#15151a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#dfc79a" id="theme-color" />
 
     <!-- Installable app. The manifest link and the service worker registration
          come from @vite-pwa/astro so their URLs follow the build's base. -->
@@ -70,18 +69,19 @@ const ogImage = image
 
     <slot name="head" />
     <script is:inline>
-      // Applied before first paint so a dark-mode reader never sees a flash of
-      // the light palette.
+      // Applied before first paint so a reader who chose dark never sees a
+      // flash of the light palette. Without a saved choice the site stays
+      // light, whatever the OS prefers.
       try {
-        const saved = localStorage.getItem('supertarot-theme');
-        if (saved === 'light' || saved === 'dark') {
-          document.documentElement.dataset.theme = saved;
+        if (localStorage.getItem('supertarot-theme') === 'dark') {
+          document.documentElement.dataset.theme = 'dark';
+          document.getElementById('theme-color')?.setAttribute('content', '#15151a');
         }
         // The root redirect reads this to send a returning reader back to the
         // language they were last using.
         localStorage.setItem('supertarot-lang', document.documentElement.lang);
       } catch {
-        /* private mode: fall back to the media query and the default language */
+        /* private mode: light theme and the default language */
       }
     </script>
   </head>
@@ -156,13 +156,11 @@ const ogImage = image
       const toggle = document.getElementById('theme-toggle');
       toggle?.addEventListener('click', () => {
         const root = document.documentElement;
-        const current =
-          root.dataset.theme ??
-          (window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : 'light');
-        const next = current === 'dark' ? 'light' : 'dark';
+        const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
         root.dataset.theme = next;
+        document
+          .getElementById('theme-color')
+          ?.setAttribute('content', next === 'dark' ? '#15151a' : '#dfc79a');
         try {
           localStorage.setItem('supertarot-theme', next);
         } catch {

@@ -70,11 +70,14 @@ Site là Progressive Web App cài được, và đây cũng là cách người d
 - **iPhone / iPad (Safari):** iOS không có prompt cài, nên banner hướng dẫn bấm Chia sẻ rồi Thêm vào MH chính. Banner ẩn trong trình duyệt nhúng (Facebook, Zalo, Messenger...) vì ở đó không có menu này. Logic nằm ở `src/lib/install.ts`, test ở `test/install.test.ts`.
 - Đóng banner thì được nhớ; mở từ màn hình chính thì không bao giờ hiện.
 
-Offline, cấu hình bằng `@vite-pwa/astro` + Workbox trong `astro.config.mjs`:
+Cache nằm trong service worker tự viết `src/sw.ts` (`@vite-pwa/astro` build ở chế độ `injectManifest`):
 
-- Mọi trang, CSS, JS và icon được precache ở lần vào đầu tiên (~1,9 MB qua mạng), nên toàn bộ tra cứu mở được khi mất mạng.
+- **Trang HTML lấy từ mạng trước.** Có mạng thì mỗi lần mở trang đều hỏi lại server, deploy mới hiện ngay. Chỉ dùng cache khi offline hoặc mạng chậm quá 4 giây. Bản PWA đầu tiên lấy trang từ precache trước nên người dùng cũ kẹt ở bản deploy trước tới 4 giờ, vì Cloudflare cho trình duyệt giữ `sw.js` lâu như vậy.
+- Mọi trang, CSS, JS và icon vẫn được precache ở lần vào đầu tiên (~1,9 MB qua mạng), nên toàn bộ tra cứu mở được khi mất mạng.
 - Ảnh lá bài (6,6 MB JPEG) cố ý **không** precache. Ảnh được cache khi xem lần đầu; lá chưa xem sẽ hiện `public/card-offline.svg` khi offline.
-- `registerType: 'autoUpdate'`: bản deploy mới có hiệu lực ở lần chuyển trang kế tiếp.
+- Service worker mới tự thay bản cũ, không có hộp thoại hỏi tải lại.
+
+Theme mặc định là sáng bất kể hệ điều hành; chỉ tối khi người dùng bấm nút đổi nền.
 
 Icon (`apple-touch-icon.png`, `icon-192/512.png`, `icon-maskable-512.png`) do `prepare_web_assets.py` sinh trên nền be đặc, vì iOS tô pixel trong suốt thành đen; bản maskable giữ logo trong vùng an toàn 80%.
 

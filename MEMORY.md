@@ -8,6 +8,17 @@
 
 ## 2026-09-17
 
+- Lỗi: sau deploy Bốc bài/Kiểm tra, user vẫn thấy site cũ trên trình duyệt đã vào trước đó (trình duyệt khác thì thấy bản mới). Server đã đúng; nguyên nhân là SW `generateSW` phục vụ HTML từ precache trước, còn Cloudflare gửi `sw.js` với `Cache-Control: max-age=14400` nên trình duyệt không lấy SW mới trong tối đa 4 giờ.
+- Sửa: `@vite-pwa/astro` chuyển sang `injectManifest` với `web/src/sw.ts` tự viết. Navigation network-first, `fetch(cache: 'no-cache')`, timeout 4s; offline dùng cache `pages` rồi precache. Precache, ảnh CacheFirst + fallback SVG giữ nguyên. Thêm devDependencies `workbox-*` 7.4.0.
+- Bẫy: plugin lưu precache theo URL thư mục (`vi/spread/`), `matchPrecache('/vi/spread/index.html')` trả undefined. Phát hiện nhờ test offline trang chưa xem.
+- User yêu cầu: theme mặc định sáng, không theo `prefers-color-scheme`. Bỏ media query dark trong `global.css` và trang redirect gốc; nút đổi nền chỉ còn light ↔ dark; `theme-color` cập nhật theo lựa chọn.
+- Việc của user nếu muốn (không làm hộ vì là tài khoản Cloudflare): Browser Cache TTL = "Respect existing headers" để `sw.js` về max-age 600 của GitHub Pages.
+- Verification:
+  - `npm test` 27 pass, `astro check` 0 lỗi, build injectManifest precache 193 entries
+  - Server local giả lập header production (sw.js 4h, còn lại 10 phút) + headless Chrome: cài SW, sửa HTML trong dist mà không đổi sw.js → tải lại hiện ngay bản mới; `/vi` → `/vi/`; tắt server → `/vi/` ra bản mới nhất, `/en/card/death/` chưa xem vẫn mở, ảnh placeholder 88px, `/vi/spread/` mở
+  - Emulate OS dark: nền vẫn `rgb(255, 251, 240)`, không có `data-theme`
+
+
 - Web: bỏ dòng "Dữ liệu từ labyrinthos.co" ở chân trang (dữ liệu đã dịch lại), thay bằng tác giả Bùi Hải; thêm `<meta name="author">` và `author` trong JSON-LD trang lá bài. Hằng số ở `web/src/lib/site.ts`.
 - Đổi "Rút bài" thành "Kiểm tra" (en: Quiz), route `draw` → `quiz`. `/vi/draw/`, `/en/draw/` thành stub redirect trong `<head>` để link cũ và shortcut PWA đã cài không 404; sitemap lọc bỏ. Giữ key `supertarot-draw-<lang>` để không mất tiến độ.
 - Thêm "Bốc bài" (en: Spread) `/<lang>/spread/`: 3 lá ngẫu nhiên khác nhau, Quá khứ/Hiện tại/Tương lai, mỗi lá xuôi/ngược 50% (ảnh ngược xoay 180°). Bảng 3 cột kẻ viền, mỗi phần một hàng tiêu đề: từ khóa, nghĩa cô đọng, ý nghĩa, tình yêu, sự nghiệp, tài chính, cảm xúc, hành động, tương ứng. Điện thoại: bảng min-width 780px cuộn ngang, nhãn phần sticky, có dòng "Vuốt ngang". Lưu spread cuối vào localStorage.
