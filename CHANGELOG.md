@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/hairbui76/supertarot/compare/v1.6.1...v1.7.0) (2026-09-18)
+
+
+### Features
+
+* **web:** tìm lá theo số và bộ, xếp chọn bộ bài theo hàng ngang ([c6637ef](https://github.com/hairbui76/supertarot/commit/c6637ef2409d8eec8e60b1505b55fff04c8fab4e))
+
 ## [1.6.1](https://github.com/hairbui76/supertarot/compare/v1.6.0...v1.6.1) (2026-09-17)
 
 
