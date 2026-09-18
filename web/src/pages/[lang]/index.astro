@@ -260,6 +260,45 @@ const glyphKeys: Record<string, string> = {
     height: 22px;
   }
 
+  /* Wider screens: the five suits side by side as upright tiles, glyph and
+     arrow on top, name underneath. A full-width row per suit left most of
+     each bar empty. Phones keep the stacked rows. */
+  @media (min-width: 640px) {
+    .suit-list {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .suit {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        'glyph go'
+        'text text';
+      align-items: start;
+      gap: 18px 8px;
+      height: 100%;
+      padding: 16px;
+    }
+
+    .suit__glyph {
+      grid-area: glyph;
+    }
+
+    .suit__go {
+      grid-area: go;
+      justify-self: end;
+    }
+
+    .suit__text {
+      grid-area: text;
+      gap: 2px;
+    }
+
+    .suit__name {
+      overflow-wrap: anywhere;
+    }
+  }
+
   @media (max-width: 760px) {
     .hero {
       grid-template-columns: minmax(0, 1fr);

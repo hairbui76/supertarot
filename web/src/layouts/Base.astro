@@ -152,6 +152,14 @@ const ogImage = image
 
     <InstallHint lang={lang} />
 
+    {/* Dev-only feedback toolbar (Agentation). Vite serves the source file
+        directly under `astro dev`; a build drops this tag and bundles nothing. */}
+    {
+      import.meta.env.DEV && (
+        <script is:inline type="module" src={asset(base, 'src/dev/agentation.ts')} />
+      )
+    }
+
     <script is:inline>
       const toggle = document.getElementById('theme-toggle');
       toggle?.addEventListener('click', () => {

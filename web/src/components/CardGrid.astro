@@ -2,6 +2,7 @@
 import { href, type Lang, type TarotCard } from '../lib/cards';
 import { t } from '../lib/i18n';
 import { icons } from '../lib/icons';
+import { searchKey } from '../lib/search';
 
 interface Props {
   lang: Lang;
@@ -23,7 +24,7 @@ const base = import.meta.env.BASE_URL;
         <input
           type="search"
           id="card-search"
-          placeholder={strings.search}
+          placeholder={strings.searchHint}
           aria-label={strings.search}
           autocomplete="off"
         />
@@ -55,7 +56,7 @@ const base = import.meta.env.BASE_URL;
 <ul class="card-grid" id="card-grid">
   {
     cards.map((card) => (
-      <li class="card-grid__item" data-name={card.name.toLowerCase()}>
+      <li class="card-grid__item" data-search={searchKey(card, lang)}>
         <a class="card-tile" href={href(base, lang, 'card', card.slug)}>
           <img
             class="card-tile__art"
@@ -74,6 +75,8 @@ const base = import.meta.env.BASE_URL;
 </ul>
 
 <script>
+  import { matchesQuery } from '../lib/search';
+
   const MIN = 1;
   const MAX = 5;
   const KEY = 'supertarot-columns';
@@ -168,10 +171,10 @@ const base = import.meta.env.BASE_URL;
 
   if (search && grid && empty) {
     search.addEventListener('input', () => {
-      const query = search.value.trim().toLowerCase();
+      const query = search.value;
       let shown = 0;
       grid.querySelectorAll<HTMLLIElement>('.card-grid__item').forEach((item) => {
-        const match = !query || (item.dataset.name ?? '').includes(query);
+        const match = matchesQuery(item.dataset.search ?? '', query);
         item.hidden = !match;
         if (match) shown += 1;
       });

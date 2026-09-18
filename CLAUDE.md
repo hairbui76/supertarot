@@ -62,9 +62,10 @@ supertarot/
 │   └── test/                      # parity embedding, deck order, offline assets
 ├── web/                           # Site tĩnh Astro (xem web/README.md)
 │   ├── tools/prepare_web_assets.py # Export data repo sang web/src/data + public
-│   ├── src/lib/                   # cards, i18n, icons, study (port của study.py), spread, install
+│   ├── src/lib/                   # cards, i18n, icons, study (port của study.py), spread, install, search
+│   ├── src/dev/agentation.ts      # thanh feedback Agentation, chỉ chạy ở `astro dev`
 │   ├── src/pages/[lang]/          # home, suit, card, spread, quiz — prerender toàn bộ
-│   └── test/                      # test kiểm tra, bốc bài, banner cài đặt
+│   └── test/                      # test kiểm tra, bốc bài, tìm kiếm, banner cài đặt
 ├── data/
 │   ├── raw/                       # HTML cache (tùy chọn)
 │   ├── embeddings/                # Local/prod embedding indexes
@@ -251,6 +252,9 @@ Site Astro công bố ý nghĩa 78 lá cho trình duyệt, deploy lên GitHub Pa
 - `web/src/lib/study.ts` là port của `learning/study.py`, khớp với `study_service.dart`. `web/test/study.test.ts` chốt vòng 78 lá không lặp.
 - `site` và `base` lấy từ `actions/configure-pages` lúc build, không hard-code, vì Pages đang chạy qua custom domain.
 - PWA: cài được lên màn hình chính (banner `InstallHint.astro`, iOS hướng dẫn Chia sẻ → Thêm vào MH chính). `@vite-pwa/astro` chế độ `injectManifest`, SW tự viết ở `web/src/sw.ts`: trang HTML **network-first** (fetch `cache: 'no-cache'`, timeout 4s rồi mới dùng cache), CSS/JS/icon precache cache-first. Precache toàn bộ trang chỉ để dùng offline; ảnh lá bài chỉ cache khi xem, lá chưa xem hiện `card-offline.svg`. Không quay lại precache-first cho HTML: Cloudflare cho trình duyệt giữ `sw.js` 4 giờ nên người dùng cũ sẽ kẹt ở bản deploy trước. Icon PWA nền be đặc sinh bởi `prepare_web_assets.py`.
+- Tìm kiếm (`web/src/lib/search.ts`, test `web/test/search.test.ts`): khóa gồm tên, số lá (Ẩn Chính 0-21, Ace 1…Ten 10, lá hoàng gia không số) và tên bộ cả hai ngôn ngữ, bỏ dấu. Số khớp chính xác, chữ khớp tiền tố; "2 cốc" → Two of Cups.
+- Chọn bộ bài ở trang chủ: từ 640px xếp 5 ô ngang, dưới 640px mỗi bộ một hàng.
+- Agentation chỉ ở dev: `Base.astro` chèn `<script src="src/dev/agentation.ts">` khi `import.meta.env.DEV`, file đó tự mount React. Không dùng `@astrojs/react` island vì Astro vẫn bundle `client:only` sau điều kiện DEV. `react`, `react-dom`, `agentation` là devDependencies; build production không chứa React.
 - Theme mặc định luôn sáng, không theo `prefers-color-scheme`; chỉ tối khi người dùng bấm nút (lưu `supertarot-theme=dark`).
 - UI theo cùng hệ neubrutalism trong `DESIGN.md`, token ở `web/src/styles/global.css`, icon SVG inline ở `web/src/lib/icons.ts`.
 

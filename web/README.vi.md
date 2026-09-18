@@ -55,7 +55,7 @@ Không có embedding index: ở đây không có AI, và tìm kiếm là theo t�
 ```bash
 cd web
 npm install
-npm run dev      # http://localhost:4321/
+npm run dev      # http://localhost:4321/, kèm thanh Agentation
 npm test         # logic kiểm tra, bốc bài, banner cài đặt
 npm run check    # astro check
 npm run build    # output tĩnh vào web/dist
@@ -91,6 +91,12 @@ vì tài khoản đang phục vụ Pages qua custom domain. Giá trị fallback 
 
 `robots.txt` cũng sinh từ `Astro.site` vì lý do đó: hard-code URL sitemap sẽ trỏ
 sai origin.
+
+Khi chạy `npm run dev`, mọi trang có thêm thanh feedback [Agentation](https://agentation.com) ở góc dưới phải: bấm vào phần tử, ghi chú, rồi copy ghi chú dạng markdown cho coding agent. `src/dev/agentation.ts` tự mount bằng React, qua thẻ script mà `Base.astro` chỉ chèn khi `import.meta.env.DEV`. Cố ý không dùng Astro island: Astro đóng gói mọi component `client:only` nó thấy, kể cả khi nằm sau điều kiện DEV, nên island sẽ kéo React vào bản production.
+
+## Tìm kiếm
+
+`src/lib/search.ts` gán cho mỗi lá một khóa: tên, số (Ẩn Chính 0-21, Ace 1 tới Ten 10; lá hoàng gia không có số) và tên bộ bằng cả hai ngôn ngữ, viết thường và bỏ dấu tiếng Việt. Mọi từ trong truy vấn phải khớp một từ của khóa: số khớp chính xác, nên "2" ra các lá Two và The High Priestess chứ không ra 12, 20, 21; chữ khớp theo tiền tố, nên gõ tới đâu lọc tới đó. "2 cups", "2 cốc" và "2 coc" đều ra Two of Cups. `test/search.test.ts` chạy trên dữ liệu thật.
 
 ## Logic dùng chung
 

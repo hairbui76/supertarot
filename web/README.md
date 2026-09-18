@@ -57,7 +57,7 @@ No embedding index: there is no AI here, and search is by card name.
 ```bash
 cd web
 npm install
-npm run dev      # http://localhost:4321/
+npm run dev      # http://localhost:4321/, with the Agentation toolbar
 npm test         # quiz, spread and install-hint logic
 npm run check    # astro check
 npm run build    # static output into web/dist
@@ -113,6 +113,24 @@ laptop.
 
 `robots.txt` is generated from `Astro.site` for the same reason: a hard-coded
 sitemap URL would point at the wrong origin.
+
+Under `npm run dev` every page also loads the
+[Agentation](https://agentation.com) feedback toolbar (bottom-right): click an
+element, write a note, and copy the notes as markdown for a coding agent.
+`src/dev/agentation.ts` mounts it with React by hand, from a script tag that
+`Base.astro` emits only when `import.meta.env.DEV` is true. It is not an Astro
+island on purpose: Astro bundles every `client:only` component it sees, even
+behind a DEV check, so an island would ship React to production.
+
+## Search
+
+`src/lib/search.ts` gives each card a key: its name, its number (Major Arcana
+0-21, Ace 1 to Ten 10; court cards have none) and its suit in both languages,
+all lowercase with Vietnamese diacritics removed. Every word of the query must
+match a word of the key: numbers exactly, so "2" finds the Twos and The High
+Priestess but not 12, 20 or 21; words by prefix, so typing narrows as you go.
+"2 cups", "2 cốc" and "2 coc" all find Two of Cups. `test/search.test.ts` runs
+against the real deck.
 
 ## Shared logic
 

@@ -6,6 +6,16 @@
 - If a change modifies structure, schemas, runtime behavior, or adds/removes logic, also update `CLAUDE.md` and `AGENTS.md`.
 - Keep entries concise: date, intent, files touched, verification.
 
+## 2026-09-18
+
+- Tìm kiếm web: gõ "2" không ra "Two of …" vì chỉ so substring tên tiếng Anh. Thêm `web/src/lib/search.ts`: khóa = tên + số lá (Ẩn Chính 0-21, Ace 1…Ten 10) + tên bộ vi/en, bỏ dấu tiếng Việt; số khớp chính xác, chữ khớp tiền tố. "2" → 4 lá Two + The High Priestess; "2 cốc"/"2 coc"/"2 cups" → Two of Cups. Placeholder ô tìm đổi thành gợi ý "Tìm theo tên, số hoặc bộ, vd. 2 cốc".
+- Chọn bộ bài ở trang chủ: từ 640px xếp 5 ô ngang (ô dựng đứng, glyph + mũi tên trên, tên dưới); dưới 640px giữ mỗi bộ một hàng.
+- Thêm Agentation cho `astro dev`. Thử `@astrojs/react` + `<Agentation client:only="react" />` sau `import.meta.env.DEV` trước: build production vẫn đóng gói React + Agentation (~600 KB, SW precache 196 mục). Đổi sang `web/src/dev/agentation.ts` mount React thủ công, `Base.astro` chỉ chèn thẻ script khi DEV; bỏ `@astrojs/react`. Build production sạch, precache về 193 mục.
+- Agentation render qua portal vào một div riêng trong body, không vào `#agentation-root`; nút nằm góc dưới phải.
+- Verification:
+  - `npm test` 35 pass (thêm `test/search.test.ts` 8 test), `astro check` 0 lỗi, build 175 trang, `dist` không có chuỗi `agentation`/`createRoot`
+  - `astro dev` + headless Chrome: toolbar Agentation hiện, không lỗi console; tìm "2", "2 cốc", "10 kiem", "0", "prie" đúng; 1280px 5 ô 205×151 cùng hàng, 390px 5 hàng 350×81, không tràn ngang
+
 ## 2026-09-17
 
 - Lỗi: sau deploy Bốc bài/Kiểm tra, user vẫn thấy site cũ trên trình duyệt đã vào trước đó (trình duyệt khác thì thấy bản mới). Server đã đúng; nguyên nhân là SW `generateSW` phục vụ HTML từ precache trước, còn Cloudflare gửi `sw.js` với `Cache-Control: max-age=14400` nên trình duyệt không lấy SW mới trong tối đa 4 giờ.

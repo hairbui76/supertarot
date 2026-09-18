@@ -493,6 +493,10 @@ Ký release đọc `mobile/android/key.properties` (gitignored); thiếu file th
 
 **PWA:** `@vite-pwa/astro` chế độ `injectManifest`, service worker tự viết ở `web/src/sw.ts`. Navigation đi network-first (`fetch` với `cache: 'no-cache'` để bỏ qua max-age 10 phút của GitHub Pages; chậm quá 4s thì dùng cache nếu có; offline thì cache `pages` rồi tới precache). Precache mọi HTML/CSS/JS/icon (~1,9 MB gzip) để cả site mở offline; ảnh `cards/` bị loại khỏi precache (6,6 MB JPEG không nén được) và cache `CacheFirst` khi xem, fallback `card-offline.svg`. Bản đầu dùng `generateSW` precache-first cho HTML và làm người dùng cũ kẹt ở bản deploy trước tới 4 giờ, vì Cloudflare gửi `sw.js` với `max-age=14400`. Plugin lưu precache theo URL thư mục (`vi/spread/`), không phải `index.html`.
 
+**Tìm kiếm:** `web/src/lib/search.ts` sinh `data-search` lúc build (tên + số lá + tên bộ vi/en, bỏ dấu); client dùng `matchesQuery`. Số phải khớp chính xác để "2" không ra 12/20/21. Test chạy trên dữ liệu thật.
+
+**Agentation (dev):** thanh feedback chỉ có ở `astro dev`, mount thủ công ở `web/src/dev/agentation.ts` qua thẻ script có điều kiện `import.meta.env.DEV`. Không dùng Astro island: lần thử với `@astrojs/react` + `client:only` khiến build production vẫn đóng gói React/Agentation (~600 KB) và SW precache chúng.
+
 **Theme:** mặc định sáng bất kể hệ điều hành; tối chỉ khi `localStorage supertarot-theme=dark`. `web/src/lib/install.ts` quyết định banner cài đặt (`prompt` cho Chromium, `ios` cho Safari iPhone/iPad, ẩn trong in-app browser và khi đã standalone); test ở `web/test/install.test.ts`. Icon PWA phải đặc (iOS tô nền trong suốt thành đen), bản maskable thu nhỏ còn 70%.
 
 **Bốc bài:** `web/src/lib/spread.ts` rút 3 lá khác nhau (Fisher-Yates từng phần) và tung đồng xu cho chiều; nguồn random là tham số để test seed được. Trang `spread.astro` inline deck, dựng bảng 3 cột bằng DOM (`textContent`, không `innerHTML` với dữ liệu lá bài), mỗi phần một hàng tiêu đề riêng, bỏ hàng nếu cả 3 lá đều trống. `restoreSpread()` bỏ spread đã lưu nếu slug không còn khớp deck.
