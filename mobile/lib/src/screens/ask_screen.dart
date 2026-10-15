@@ -266,6 +266,10 @@ class _AskScreenState extends State<AskScreen> {
               physics: const NeverScrollableScrollPhysics(),
               buildDefaultDragHandles: false,
               itemCount: _picks.length,
+              // CI builds on latest stable, where onReorder is deprecated for
+              // onReorderItem; that callback does not exist yet in Flutter
+              // 3.41, so keep the old one until local toolchains catch up.
+              // ignore: deprecated_member_use
               onReorder: _reorder,
               proxyDecorator: (Widget child, int index, Animation<double> _) =>
                   Material(type: MaterialType.transparency, child: child),
