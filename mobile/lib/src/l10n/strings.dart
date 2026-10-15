@@ -74,6 +74,11 @@ class Strings {
     required this.deleteReading,
     required this.reuseReading,
     required this.generalReading,
+    required this.spreadLabel,
+    required this.spreadPositions,
+    required this.spreadCards,
+    required this.spreadMissing,
+    required this.spreadNext,
     required this.language,
     required this.qaProvider,
     required this.gradingProvider,
@@ -174,6 +179,11 @@ class Strings {
   final String deleteReading;
   final String reuseReading;
   final String generalReading;
+  final String spreadLabel;
+  final String spreadPositions;
+  final String spreadCards;
+  final String spreadMissing;
+  final String spreadNext;
   final String language;
   final String qaProvider;
   final String gradingProvider;
@@ -265,7 +275,7 @@ class Strings {
     interpret: 'Giải nghĩa',
     addAs: 'Thêm ở chiều',
     clearCards: 'Bỏ hết',
-    maxCardsReached: 'Tối đa 12 lá cho một lần giải.',
+    maxCardsReached: 'Đã đủ {n} lá cho kiểu trải này.',
     removeCard: 'Bỏ lá này',
     done: 'Xong',
     dragToReorder: 'Giữ và kéo để đổi thứ tự',
@@ -277,6 +287,11 @@ class Strings {
     deleteReading: 'Xóa mục này',
     reuseReading: 'Hỏi lại',
     generalReading: 'Giải bài tổng quan',
+    spreadLabel: 'Kiểu trải bài',
+    spreadPositions: 'Các vị trí',
+    spreadCards: '{n} lá',
+    spreadMissing: 'Còn thiếu {n} lá cho kiểu trải này.',
+    spreadNext: 'Lá tiếp theo: {position}',
     language: 'Ngôn ngữ',
     qaProvider: 'AI cho hỏi đáp',
     gradingProvider: 'AI cho chấm bài',
@@ -372,7 +387,7 @@ class Strings {
     interpret: 'Interpret',
     addAs: 'Add as',
     clearCards: 'Clear',
-    maxCardsReached: 'Up to 12 cards per reading.',
+    maxCardsReached: 'This spread holds {n} cards.',
     removeCard: 'Remove card',
     done: 'Done',
     dragToReorder: 'Hold and drag to reorder',
@@ -384,6 +399,11 @@ class Strings {
     deleteReading: 'Delete this reading',
     reuseReading: 'Ask again',
     generalReading: 'General reading',
+    spreadLabel: 'Spread',
+    spreadPositions: 'Positions',
+    spreadCards: '{n} cards',
+    spreadMissing: '{n} more to complete this spread.',
+    spreadNext: 'Next card: {position}',
     language: 'Language',
     qaProvider: 'AI for Q&A',
     gradingProvider: 'AI for grading',
@@ -422,6 +442,15 @@ class Strings {
 
   String versionAvailable(String version) =>
       updateAvailable.replaceAll('{version}', version);
+
+  String spreadCardCount(int n) => spreadCards.replaceAll('{n}', '$n');
+
+  String spreadMissingCount(int n) => spreadMissing.replaceAll('{n}', '$n');
+
+  String spreadNextPosition(String position) =>
+      spreadNext.replaceAll('{position}', position);
+
+  String maxCards(int n) => maxCardsReached.replaceAll('{n}', '$n');
 
   String cycle(int cycleNumber, int remaining) => cycleProgress
       .replaceAll('{cycle}', '$cycleNumber')

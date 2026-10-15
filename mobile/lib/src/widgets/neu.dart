@@ -249,12 +249,15 @@ class NeuChip extends StatelessWidget {
             Icon(icon, size: 14, color: ink),
             const SizedBox(width: 6),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              color: ink,
-              fontWeight: FontWeight.w800,
-              fontSize: dense ? 11 : 12.5,
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: ink,
+                fontWeight: FontWeight.w800,
+                fontSize: dense ? 11 : 12.5,
+              ),
             ),
           ),
         ],

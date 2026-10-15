@@ -13,7 +13,7 @@ themselves.
 | --- | --- | --- |
 | Browse | No | Walk each suit in traditional deck order, search by name, view card art, correspondences, symbols, and the full upright/reversed meanings. Pinch the grid to show anywhere from 1 to 5 cards per row. |
 | Study | Only to grade | Draw one card and one specific facet, never repeating a card within a cycle of 78. Write an answer and have it graded against a JSON rubric. |
-| Ask | Yes | Write a question, pick the cards you drew in order (each upright or reversed, drag to reorder), then tap Interpret. With no cards picked, the app retrieves chunks from the on-device embedding index and asks an LLM to synthesize. Reading history stays on the device (last 100), with Ask again and Delete. |
+| Ask | Yes | Write a question, choose a spread (21 layouts from one card to the Celtic Cross, twelve houses and year ahead, each with a description and named positions), pick the cards you drew in order (each upright or reversed, drag to reorder), then tap Interpret. With no cards picked, the app retrieves chunks from the on-device embedding index and asks an LLM to synthesize. Reading history stays on the device (last 100), with Ask again and Delete. |
 | Settings | — | Language (vi/en), providers for Q&A and grading, API key and model per provider, retrieval depth, and the in-app updater. |
 
 API keys are stored with `flutter_secure_storage` (Android

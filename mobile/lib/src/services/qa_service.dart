@@ -2,6 +2,7 @@ import '../data/embedding_index.dart';
 import '../data/settings_store.dart';
 import '../data/tarot_repository.dart';
 import '../models/reference_chunk.dart';
+import '../models/spread.dart';
 import '../models/tarot_card.dart';
 import 'llm_client.dart';
 
@@ -28,6 +29,7 @@ class QaResult {
     required this.mode,
     this.chunks = const <ReferenceChunk>[],
     this.picks = const <CardPick>[],
+    this.spreadId,
     this.error,
   });
 
@@ -37,6 +39,9 @@ class QaResult {
 
   /// Cards the answer reads, in order. Empty for a plain question.
   final List<CardPick> picks;
+
+  /// [SpreadDefinition.id] the cards were laid in; null for a plain question.
+  final String? spreadId;
 
   /// Which provider produced the answer, or `context` when the app fell back
   /// to showing retrieved reference text without LLM synthesis.
@@ -98,21 +103,24 @@ class QaService {
     }
   }
 
-  /// Reads [picks] in order against [question]. Card text comes straight from
-  /// the bundled data rather than retrieval, so every chosen card is covered
-  /// in the orientation it fell.
+  /// Reads [picks] in order against [question], card N sitting in position N
+  /// of [spread]. Card text comes straight from the bundled data rather than
+  /// retrieval, so every chosen card is covered in the orientation it fell.
   Future<QaResult> interpret({
     required SettingsStore settings,
     required String question,
     required List<CardPick> picks,
+    SpreadDefinition? spread,
   }) async {
+    final SpreadDefinition layout = spread ?? spreadById('free');
     final String language = settings.language;
     final LlmProvider? provider = settings.resolveProvider(settings.qaProvider);
     if (provider == null) {
       return QaResult(
         query: question,
-        answer: _readingFallback(picks, language, null),
+        answer: _readingFallback(picks, layout, language, null),
         picks: picks,
+        spreadId: layout.id,
         mode: 'context',
       );
     }
@@ -123,20 +131,23 @@ class QaService {
         model: settings.model(provider),
         apiKey: settings.apiKey(provider),
         systemPrompt: _readingSystemPrompt(language),
-        userPrompt: readingUserPrompt(question, picks, language),
+        userPrompt:
+            readingUserPrompt(question, picks, language, spread: layout),
         temperature: 0.4,
       );
       return QaResult(
         query: question,
         answer: cleanAnswer(raw),
         picks: picks,
+        spreadId: layout.id,
         mode: provider.id,
       );
     } on LlmException catch (error) {
       return QaResult(
         query: question,
-        answer: _readingFallback(picks, language, error.message),
+        answer: _readingFallback(picks, layout, language, error.message),
         picks: picks,
+        spreadId: layout.id,
         mode: 'context',
         error: error.message,
       );
@@ -148,7 +159,8 @@ class QaService {
       return 'Bạn là SuperTarot, người đọc bài tarot. Trả lời bằng tiếng Việt '
           'tự nhiên, ấm áp nhưng thẳng thắn. Người dùng đưa ra câu hỏi và các '
           'lá đã rút theo đúng thứ tự, mỗi lá xuôi hoặc ngược. Đọc từng lá theo '
-          'đúng chiều của nó và gắn với câu hỏi, rồi kết nối các lá thành một '
+          'đúng chiều của nó, theo ý nghĩa vị trí nếu có kiểu trải, gắn với câu '
+          'hỏi, rồi kết nối các lá thành một '
           'mạch chung. Bám vào dữ liệu lá bài được cung cấp, không bịa nghĩa '
           'trái với dữ liệu. Không thêm mục Lưu ý, Tham chiếu hay Nguồn. Dùng '
           '**...** khi cần in đậm và ký tự • cho danh sách.';
@@ -156,7 +168,8 @@ class QaService {
     return 'You are SuperTarot, a tarot reader. Answer in natural English, '
         'warm but direct. The user gives a question and the cards they drew, '
         'in order, each upright or reversed. Read each card in its own '
-        'orientation against the question, then connect the cards into one '
+        'orientation and, when a spread is given, through its position, '
+        'against the question, then connect the cards into one '
         'thread. Stay grounded in the card data provided and do not invent '
         'meanings that contradict it. Do not add Note, References, or Sources '
         'sections. Use **...** for emphasis and • for bullets.';
@@ -165,9 +178,12 @@ class QaService {
   static String readingUserPrompt(
     String question,
     List<CardPick> picks,
-    String language,
-  ) {
+    String language, {
+    SpreadDefinition? spread,
+  }) {
     final bool vi = language == 'vi';
+    final SpreadDefinition? layout =
+        spread == null || spread.isFree ? null : spread;
     final String asked = question.trim().isEmpty
         ? (vi
             ? '(Không có câu hỏi cụ thể - hãy đọc tổng quan.)'
@@ -175,41 +191,96 @@ class QaService {
         : question.trim();
 
     final String cards = <String>[
-      for (int i = 0; i < picks.length; i++) _cardBlock(i + 1, picks[i], vi),
+      for (int i = 0; i < picks.length; i++)
+        _cardBlock(i + 1, picks[i], layout?.positionAt(i), language),
     ].join('\n\n');
+
+    if (layout == null) {
+      if (vi) {
+        return 'Câu hỏi:\n$asked\n\n'
+            'Các lá đã rút (${picks.length} lá, theo thứ tự):\n\n$cards\n\n'
+            'Cách trả lời:\n'
+            '• Mở đầu bằng 1-2 câu trả lời thẳng vào câu hỏi.\n'
+            '• Với từng lá: dòng **N. Tên lá (Xuôi/Ngược)** rồi 2-4 câu giải '
+            'nghĩa gắn với câu hỏi.\n'
+            '• Nếu câu hỏi không nêu cách trải bài, đọc các lá như một dòng '
+            'chảy theo thứ tự (ví dụ 3 lá: quá khứ → hiện tại → tương lai).\n'
+            '• Kết thúc bằng phần tổng kết kết nối các lá và một lời khuyên cụ '
+            'thể.';
+      }
+      return 'Question:\n$asked\n\n'
+          'Cards drawn (${picks.length}, in order):\n\n$cards\n\n'
+          'How to answer:\n'
+          '• Open with 1-2 sentences that answer the question directly.\n'
+          '• For each card: a line **N. Card name (Upright/Reversed)** then 2-4 '
+          'sentences tying it to the question.\n'
+          '• If the question names no spread, read the cards as a flow in '
+          'order (e.g. 3 cards: past → present → future).\n'
+          '• Close with a summary that connects the cards and one concrete '
+          'piece of advice.';
+    }
+
+    final int total = layout.positions.length;
+    final String positions = <String>[
+      for (int i = 0; i < total; i++) _positionLine(i, layout, language),
+    ].join('\n');
+    final bool partial = picks.length < total;
 
     if (vi) {
       return 'Câu hỏi:\n$asked\n\n'
-          'Các lá đã rút (${picks.length} lá, theo thứ tự):\n\n$cards\n\n'
+          'Kiểu trải: ${layout.nameVi}\n${layout.descriptionVi}\n'
+          'Các vị trí:\n$positions\n\n'
+          'Các lá đã rút (${picks.length}/$total lá, lá N nằm ở vị trí N):\n\n'
+          '$cards\n\n'
           'Cách trả lời:\n'
           '• Mở đầu bằng 1-2 câu trả lời thẳng vào câu hỏi.\n'
-          '• Với từng lá: dòng **N. Tên lá (Xuôi/Ngược)** rồi 2-4 câu giải '
-          'nghĩa gắn với câu hỏi.\n'
-          '• Nếu câu hỏi không nêu cách trải bài, đọc các lá như một dòng chảy '
-          'theo thứ tự (ví dụ 3 lá: quá khứ → hiện tại → tương lai).\n'
-          '• Kết thúc bằng phần tổng kết kết nối các lá và một lời khuyên cụ thể.';
+          '• Với từng lá: dòng **N. Vị trí - Tên lá (Xuôi/Ngược)** rồi 2-4 câu '
+          'đọc lá theo đúng ý nghĩa vị trí của nó và gắn với câu hỏi.\n'
+          '${partial ? '• Người dùng chưa rút đủ lá; chỉ đọc các vị trí đã có lá, không đoán lá còn thiếu.\n' : ''}'
+          '• Kết thúc bằng phần tổng kết kết nối các vị trí và một lời khuyên '
+          'cụ thể.';
     }
     return 'Question:\n$asked\n\n'
-        'Cards drawn (${picks.length}, in order):\n\n$cards\n\n'
+        'Spread: ${layout.nameEn}\n${layout.descriptionEn}\n'
+        'Positions:\n$positions\n\n'
+        'Cards drawn (${picks.length}/$total, card N sits in position N):\n\n'
+        '$cards\n\n'
         'How to answer:\n'
         '• Open with 1-2 sentences that answer the question directly.\n'
-        '• For each card: a line **N. Card name (Upright/Reversed)** then 2-4 '
-        'sentences tying it to the question.\n'
-        '• If the question names no spread, read the cards as a flow in order '
-        '(e.g. 3 cards: past → present → future).\n'
-        '• Close with a summary that connects the cards and one concrete piece '
-        'of advice.';
+        '• For each card: a line **N. Position - Card name '
+        '(Upright/Reversed)** then 2-4 sentences reading the card through its '
+        'position and tying it to the question.\n'
+        '${partial ? '• The spread is not complete; read only the positions that have a card and do not guess the missing ones.\n' : ''}'
+        '• Close with a summary that connects the positions and one concrete '
+        'piece of advice.';
   }
 
-  static String _orientationLabel(CardPick pick, bool vi) => pick.isReversed
-      ? (vi ? 'Ngược' : 'Reversed')
-      : (vi ? 'Xuôi' : 'Upright');
+  static String _positionLine(
+    int index,
+    SpreadDefinition spread,
+    String language,
+  ) {
+    final SpreadPosition position = spread.positions[index];
+    final String hint = position.hint(language);
+    return '${index + 1}. ${position.label(language)}'
+        '${hint.isEmpty ? '' : ' ($hint)'}';
+  }
 
-  static String _cardBlock(int position, CardPick pick, bool vi) {
+  static String _orientationLabel(CardPick pick, bool vi) =>
+      pick.isReversed ? (vi ? 'Ngược' : 'Reversed') : (vi ? 'Xuôi' : 'Upright');
+
+  static String _cardBlock(
+    int position,
+    CardPick pick,
+    SpreadPosition? slot,
+    String language,
+  ) {
+    final bool vi = language == 'vi';
     final TarotCard card = pick.card;
     final CardSection section = card.section(pick.orientation);
+    final String place = slot == null ? '' : '${slot.label(language)}: ';
     final List<String> lines = <String>[
-      '[$position] ${card.name} - ${_orientationLabel(pick, vi)}',
+      '[$position] $place${card.name} - ${_orientationLabel(pick, vi)}',
     ];
 
     void add(String label, String value) {
@@ -222,7 +293,8 @@ class QaService {
     add(vi ? 'Nguyên tố' : 'Element', card.element);
     add(vi ? 'Chiêm tinh' : 'Astrology', card.astrology);
     add('Yes/No', card.yesNo);
-    add(vi ? 'Từ khóa' : 'Keywords', card.keywords(pick.orientation).join(', '));
+    add(vi ? 'Từ khóa' : 'Keywords',
+        card.keywords(pick.orientation).join(', '));
     add(vi ? 'Tóm tắt' : 'Summary', card.shortSummary(pick.orientation));
     add(vi ? 'Ý nghĩa' : 'Meaning', section.description);
     add(vi ? 'Tình yêu' : 'Love', section.love);
@@ -235,6 +307,7 @@ class QaService {
 
   static String _readingFallback(
     List<CardPick> picks,
+    SpreadDefinition spread,
     String language,
     String? error,
   ) {
@@ -261,8 +334,10 @@ class QaService {
       final String summary = short.isNotEmpty
           ? short
           : pick.card.section(pick.orientation).description;
-      lines.add('**${i + 1}. ${pick.card.name} (${_orientationLabel(pick, vi)})**'
-          ': ${_compact(summary, 360)}');
+      final SpreadPosition? slot = spread.positionAt(i);
+      final String place = slot == null ? '' : '${slot.label(language)} - ';
+      lines.add('**${i + 1}. $place${pick.card.name} '
+          '(${_orientationLabel(pick, vi)})**: ${_compact(summary, 360)}');
     }
     return lines.join('\n');
   }

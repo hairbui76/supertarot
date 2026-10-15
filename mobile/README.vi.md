@@ -12,7 +12,7 @@ mới cần mạng và API key do người dùng tự nhập.
 | --- | --- | --- |
 | Tra cứu | Không | Duyệt từng bộ đúng thứ tự tarot, tìm theo tên, xem ảnh lá bài, correspondences, biểu tượng, và nghĩa xuôi/ngược đầy đủ. Pinch để đổi số cột hiển thị từ 1 tới 5. |
 | Học bài | Chỉ khi chấm | Rút một lá và một facet cụ thể, không lặp lá trong vòng 78 lá. Nhập câu trả lời rồi chấm theo rubric JSON. |
-| Hỏi đáp | Có | Viết câu hỏi, chọn các lá đã rút theo thứ tự (mỗi lá xuôi/ngược, kéo để đổi thứ tự) rồi bấm Giải nghĩa. Không chọn lá thì app retrieve chunk từ embedding index trong máy rồi nhờ LLM tổng hợp. Lịch sử giải nghĩa lưu trên máy (100 mục gần nhất), có Hỏi lại và Xóa. |
+| Hỏi đáp | Có | Viết câu hỏi, chọn kiểu trải bài (21 kiểu từ 1 lá tới Celtic Cross, chiêm tinh 12 nhà, vòng năm; có mô tả và tên từng vị trí), chọn các lá đã rút theo thứ tự (mỗi lá xuôi/ngược, kéo để đổi thứ tự) rồi bấm Giải nghĩa. Không chọn lá thì app retrieve chunk từ embedding index trong máy rồi nhờ LLM tổng hợp. Lịch sử giải nghĩa lưu trên máy (100 mục gần nhất), có Hỏi lại và Xóa. |
 | Cài đặt | — | Ngôn ngữ (vi/en), provider cho Q&A và chấm bài, API key + model từng provider, số chunk retrieve, và phần cập nhật trong app. |
 
 API key lưu bằng `flutter_secure_storage` (Android EncryptedSharedPreferences),

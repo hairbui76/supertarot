@@ -80,6 +80,7 @@ class ReadingHistory {
           mode: entry['mode'] as String? ?? 'context',
           error: entry['error'] as String?,
           picks: picks,
+          spreadId: entry['spread'] as String?,
           chunks: <ReferenceChunk>[
             for (final dynamic name
                 in entry['chunk_cards'] as List<dynamic>? ?? const [])
@@ -119,6 +120,7 @@ class ReadingHistory {
         'answer': result.answer,
         'mode': result.mode,
         if (result.error != null) 'error': result.error,
+        if (result.spreadId != null) 'spread': result.spreadId,
         'picks': <Map<String, dynamic>>[
           for (final CardPick pick in result.picks)
             <String, dynamic>{

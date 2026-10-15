@@ -4,20 +4,20 @@ import '../app_scope.dart';
 import '../data/reading_history.dart';
 import '../l10n/strings.dart';
 import '../models/reference_chunk.dart';
+import '../models/spread.dart';
 import '../models/tarot_card.dart';
 import '../services/qa_service.dart';
 import '../theme.dart';
 import '../widgets/markup_text.dart';
 import '../widgets/neu.dart';
 
-/// Upper bound for one reading; a Celtic Cross plus a couple of clarifiers.
-const int maxReadingCards = 12;
-
-/// Question on top, the drawn cards below in order, then the reading.
+/// Question on top, then the spread, the drawn cards in order, and the
+/// reading.
 ///
 /// With cards picked, the answer reads exactly those cards in their
-/// orientation. With none, it falls back to freeform Q&A over the on-device
-/// index. Only the written answer needs a provider key.
+/// orientation, card N in position N of the chosen spread. With none, it falls
+/// back to freeform Q&A over the on-device index. Only the written answer
+/// needs a provider key.
 class AskScreen extends StatefulWidget {
   const AskScreen({super.key});
 
@@ -32,6 +32,7 @@ class _AskScreenState extends State<AskScreen> {
   List<SavedReading> _history = <SavedReading>[];
   final Set<String> _expanded = <String>{};
   List<CardPick> _picks = <CardPick>[];
+  SpreadDefinition _spread = spreadById('free');
   bool _busy = false;
   bool _historyRequested = false;
 
@@ -78,6 +79,7 @@ class _AskScreenState extends State<AskScreen> {
             settings: services.settings,
             question: question,
             picks: picks,
+            spread: _spread,
           );
     final SavedReading saved = await services.history.add(result, language);
 
@@ -119,6 +121,8 @@ class _AskScreenState extends State<AskScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (BuildContext context) => _CardPickerSheet(
         cards: cards,
+        spread: _spread,
+        language: services.settings.language,
         initial: _picks,
         onChanged: (List<CardPick> picks) => setState(() => _picks = picks),
       ),
@@ -131,6 +135,17 @@ class _AskScreenState extends State<AskScreen> {
       final CardPick moved = next.removeAt(oldIndex);
       next.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, moved);
       _picks = next;
+    });
+  }
+
+  /// Switching to a smaller spread drops the cards that no longer have a
+  /// position, keeping the first ones in order.
+  void _selectSpread(SpreadDefinition spread) {
+    setState(() {
+      _spread = spread;
+      if (_picks.length > spread.maxCards) {
+        _picks = _picks.take(spread.maxCards).toList();
+      }
     });
   }
 
@@ -157,6 +172,7 @@ class _AskScreenState extends State<AskScreen> {
     setState(() {
       _question.text = reading.result.query;
       _picks = List<CardPick>.of(reading.result.picks);
+      _spread = spreadById(reading.result.spreadId);
     });
     _scroll.animateTo(
       0,
@@ -206,6 +222,8 @@ class _AskScreenState extends State<AskScreen> {
   Widget build(BuildContext context) {
     final Strings strings = AppScope.stringsOf(context);
     final NeuTokens neu = context.neu;
+    final String language = AppScope.of(context).settings.language;
+    final SpreadPosition? next = _spread.positionAt(_picks.length);
 
     // A plain Column rather than a lazy ListView: the newest reading must be
     // built for Scrollable.ensureVisible to reach it below the form.
@@ -224,15 +242,25 @@ class _AskScreenState extends State<AskScreen> {
             maxLines: 5,
             onChanged: (_) => setState(() {}),
           ),
+          const SizedBox(height: 18),
+          _SpreadSelector(
+            spread: _spread,
+            language: language,
+            strings: strings,
+            onChanged: _busy ? null : _selectSpread,
+          ),
           const SizedBox(height: 22),
           Row(
             children: <Widget>[
               Expanded(
                 child: NeuHeading(
                   icon: Icons.style,
-                  title: _picks.isEmpty
-                      ? strings.pickedCards
-                      : '${strings.pickedCards} · ${_picks.length}',
+                  title: _spread.isFree
+                      ? (_picks.isEmpty
+                          ? strings.pickedCards
+                          : '${strings.pickedCards} · ${_picks.length}')
+                      : '${strings.pickedCards} · '
+                          '${_picks.length}/${_spread.maxCards}',
                   color: neu.violet,
                 ),
               ),
@@ -277,6 +305,8 @@ class _AskScreenState extends State<AskScreen> {
                 key: ValueKey<String>(_picks[index].card.name),
                 index: index,
                 pick: _picks[index],
+                position: _spread.positionAt(index),
+                language: language,
                 strings: strings,
                 onFlip: () => _flip(index),
                 onRemove: () => _remove(index),
@@ -291,6 +321,19 @@ class _AskScreenState extends State<AskScreen> {
                   fontSize: 12,
                 ),
               ),
+          ],
+          if (next != null) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              '${strings.spreadNextPosition('${_picks.length + 1}. '
+                  '${next.label(language)}')}'
+              '${_picks.isEmpty ? '' : ' · ${strings.spreadMissingCount(_spread.maxCards - _picks.length)}'}',
+              style: TextStyle(
+                color: neu.line,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
           ],
           const SizedBox(height: 16),
           Row(
@@ -362,6 +405,102 @@ class _AskScreenState extends State<AskScreen> {
   }
 }
 
+/// Dropdown over every spread plus its description and numbered positions.
+class _SpreadSelector extends StatelessWidget {
+  const _SpreadSelector({
+    required this.spread,
+    required this.language,
+    required this.strings,
+    required this.onChanged,
+  });
+
+  final SpreadDefinition spread;
+  final String language;
+  final Strings strings;
+  final ValueChanged<SpreadDefinition>? onChanged;
+
+  String _itemLabel(SpreadDefinition item) => item.isFree
+      ? item.name(language)
+      : '${item.name(language)} · ${strings.spreadCardCount(item.maxCards)}';
+
+  @override
+  Widget build(BuildContext context) {
+    final NeuTokens neu = context.neu;
+    final Color surface = Theme.of(context).colorScheme.surfaceContainerHighest;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          strings.spreadLabel.toUpperCase(),
+          style: TextStyle(
+            color: neu.line,
+            fontWeight: FontWeight.w900,
+            fontSize: 11,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 6),
+        NeuBox(
+          color: surface,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: spread.id,
+              isExpanded: true,
+              menuMaxHeight: 440,
+              dropdownColor: surface,
+              borderRadius: BorderRadius.circular(8),
+              icon: Icon(Icons.expand_more, color: neu.line),
+              style: TextStyle(
+                color: neu.line,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+              items: <DropdownMenuItem<String>>[
+                for (final SpreadDefinition item in tarotSpreads)
+                  DropdownMenuItem<String>(
+                    value: item.id,
+                    child: Text(
+                      _itemLabel(item),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: onChanged == null
+                  ? null
+                  : (String? id) => onChanged!(spreadById(id)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          spread.description(language),
+          style: TextStyle(
+            color: neu.line.withValues(alpha: 0.8),
+            fontWeight: FontWeight.w600,
+            height: 1.45,
+          ),
+        ),
+        if (!spread.isFree) ...<Widget>[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              for (int i = 0; i < spread.positions.length; i++)
+                NeuChip(
+                  label: '${i + 1}. ${spread.positions[i].label(language)}',
+                  dense: true,
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 /// One picked card in the ordered list: position, thumbnail, orientation
 /// toggle and remove. Long-press anywhere or drag the handle to reorder.
 class _PickTile extends StatelessWidget {
@@ -369,6 +508,8 @@ class _PickTile extends StatelessWidget {
     super.key,
     required this.index,
     required this.pick,
+    required this.position,
+    required this.language,
     required this.strings,
     required this.onFlip,
     required this.onRemove,
@@ -376,6 +517,8 @@ class _PickTile extends StatelessWidget {
 
   final int index;
   final CardPick pick;
+  final SpreadPosition? position;
+  final String language;
   final Strings strings;
   final VoidCallback onFlip;
   final VoidCallback onRemove;
@@ -408,6 +551,31 @@ class _PickTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
+                    if (position != null) ...<Widget>[
+                      Text(
+                        position!.label(language).toUpperCase(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: neu.line.withValues(alpha: 0.75),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      if (position!.hint(language).isNotEmpty)
+                        Text(
+                          position!.hint(language),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: neu.line.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                      const SizedBox(height: 3),
+                    ],
                     Text(
                       pick.card.name,
                       maxLines: 2,
@@ -542,6 +710,8 @@ class _ReadingCard extends StatelessWidget {
     final List<ReferenceChunk> chunks = result.chunks;
     final String title =
         result.query.isNotEmpty ? result.query : strings.generalReading;
+    final SpreadDefinition? spread =
+        result.spreadId == null ? null : spreadById(result.spreadId);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -610,6 +780,14 @@ class _ReadingCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+            if (spread != null && !spread.isFree) ...<Widget>[
+              NeuChip(
+                label: spread.name(reading.language),
+                icon: Icons.grid_view,
+                dense: true,
+              ),
+              const SizedBox(height: 12),
+            ],
             if (result.picks.isNotEmpty) ...<Widget>[
               Wrap(
                 spacing: 8,
@@ -671,11 +849,15 @@ class _ReadingCard extends StatelessWidget {
 class _CardPickerSheet extends StatefulWidget {
   const _CardPickerSheet({
     required this.cards,
+    required this.spread,
+    required this.language,
     required this.initial,
     required this.onChanged,
   });
 
   final List<TarotCard> cards;
+  final SpreadDefinition spread;
+  final String language;
   final List<CardPick> initial;
   final ValueChanged<List<CardPick>> onChanged;
 
@@ -700,7 +882,7 @@ class _CardPickerSheetState extends State<_CardPickerSheet> {
 
   void _toggle(TarotCard card) {
     final int index = _indexOf(card);
-    if (index < 0 && _picks.length >= maxReadingCards) {
+    if (index < 0 && _picks.length >= widget.spread.maxCards) {
       return;
     }
     setState(() {
@@ -727,7 +909,9 @@ class _CardPickerSheetState extends State<_CardPickerSheet> {
                   card.type.toLowerCase().contains(_query),
             )
             .toList(growable: false);
-    final bool full = _picks.length >= maxReadingCards;
+    final int max = widget.spread.maxCards;
+    final bool full = _picks.length >= max;
+    final SpreadPosition? next = widget.spread.positionAt(_picks.length);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -744,7 +928,7 @@ class _CardPickerSheetState extends State<_CardPickerSheet> {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      '${strings.pickCards} · ${_picks.length}/$maxReadingCards',
+                      '${strings.pickCards} · ${_picks.length}/$max',
                       style: TextStyle(
                         color: neu.line,
                         fontWeight: FontWeight.w900,
@@ -793,11 +977,22 @@ class _CardPickerSheetState extends State<_CardPickerSheet> {
                 ],
               ),
             ),
+            if (next != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                child: Text(
+                  strings.spreadNextPosition(
+                    '${_picks.length + 1}. ${next.label(widget.language)}',
+                  ),
+                  style:
+                      TextStyle(color: neu.line, fontWeight: FontWeight.w800),
+                ),
+              ),
             if (full)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
                 child: Text(
-                  strings.maxCardsReached,
+                  strings.maxCards(max),
                   style: TextStyle(color: neu.red, fontWeight: FontWeight.w800),
                 ),
               ),

@@ -6,6 +6,15 @@
 - If a change modifies structure, schemas, runtime behavior, or adds/removes logic, also update `CLAUDE.md` and `AGENTS.md`.
 - Keep entries concise: date, intent, files touched, verification.
 
+## 2026-10-16
+
+- Tab Hỏi đáp có dropdown "Kiểu trải bài": 21 kiểu trong `mobile/lib/src/models/spread.dart` (Tự do, Thông điệp, Hai lựa chọn, Tình huống-Lời khuyên, 7 kiểu 3 lá, Trăng non, Trăng tròn, Chữ thập, Ra quyết định, Sự nghiệp, Mối quan hệ chi tiết, Móng ngựa, Celtic Cross, Chiêm tinh 12 nhà, Vòng năm 13 lá). Dưới dropdown hiện mô tả + chip các vị trí; mỗi lá đã chọn hiện tên vị trí (và gợi ý với Celtic Cross/Móng ngựa); "Lá tiếp theo: N. …" và số lá còn thiếu. Picker giới hạn đúng số vị trí.
+- Prompt giải bài có tên kiểu trải, danh sách vị trí và nhãn vị trí từng lá; chưa đủ lá thì chỉ đọc vị trí đã có. Kiểu trải lưu vào lịch sử (`spread`), thẻ lịch sử hiện chip tên kiểu trải, Hỏi lại khôi phục cả kiểu trải.
+- `NeuChip` giờ cắt `…` khi nhãn dài thay vì tràn (bắt được bằng widget test 360px với tên kiểu trải tiếng Việt).
+- Bẫy test: dropdown menu dựng lazy, phải `scrollUntilVisible` không kèm `.last` (finder `.last` ném StateError khi rỗng); `repository.cards(lang)` phải làm nóng ở `setUp` cho mọi ngôn ngữ test dùng, gọi trong `testWidgets` sẽ treo.
+- Verification:
+  - `flutter analyze` sạch, `flutter test` 67 pass (thêm `spread_test.dart`; prompt test cho Celtic Cross/Thông điệp/Tự do; widget test chọn Quá khứ-Hiện tại-Tương lai và Celtic Cross tiếng Việt 10 lá ở 360×780)
+
 ## 2026-10-15
 
 - Lỗi: chọn `claude-opus-5-5` thì Hỏi đáp báo "temperature is deprecated for this model". Opus 4.7+, Sonnet 5+, Haiku 5+, Fable/Mythos trả 400 cho sampling params. `LlmClient.complete` (mobile) và `call_llm` (`app/llm.py`) giờ nhận `temperature` tùy chọn, bỏ nó theo bảng model, và gửi lại không có temperature nếu model lạ vẫn trả 400 nhắc tới nó. Cũng bỏ cho OpenAI o-series/gpt-5. Anthropic `max_tokens` 4096 → 16000 vì thinking luôn bật tính vào đó; timeout mobile 90s → 180s; refusal không có text thì báo lỗi rõ.

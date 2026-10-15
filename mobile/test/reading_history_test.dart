@@ -28,6 +28,7 @@ void main() {
         query: 'Công việc?',
         answer: '**1. The World** ...',
         mode: 'anthropic',
+        spreadId: 'you_them_relationship',
         picks: <CardPick>[
           CardPick(cards[21], CardOrientation.reversed),
           CardPick(cards[0], CardOrientation.upright),
@@ -44,6 +45,7 @@ void main() {
     expect(result.query, 'Công việc?');
     expect(result.answer, '**1. The World** ...');
     expect(result.mode, 'anthropic');
+    expect(result.spreadId, 'you_them_relationship');
     expect(result.picks.map((CardPick p) => p.card.name),
         <String>['The World', 'The Fool']);
     expect(result.picks.map((CardPick p) => p.isReversed), <bool>[true, false]);
@@ -73,6 +75,7 @@ void main() {
     final SavedReading saved = (await history.load(repository)).single;
     expect(saved.result.chunks.single.cardName, 'Ace of Cups');
     expect(saved.result.picks, isEmpty);
+    expect(saved.result.spreadId, isNull);
   });
 
   test('newest first, capped, removable and clearable', () async {

@@ -457,6 +457,8 @@ Tên lá bài trong cả JSON EN và VI đều là tiếng Anh, nên một bản
 
 **UI:** bốn tab — Tra cứu (duyệt theo bộ, tìm theo tên, chi tiết lá bài 3 tab Tổng quan/Xuôi/Ngược), Học bài (rút không lặp trong vòng 78 lá + chấm rubric), Hỏi đáp (câu hỏi ở trên, chọn nhiều lá theo thứ tự + xuôi/ngược rồi Giải nghĩa qua `QaService.interpret`; không chọn lá thì Q&A trên index), Cài đặt (ngôn ngữ, provider, API key + model, số chunk retrieve).
 
+**Kiểu trải bài (`models/spread.dart`):** `tarotSpreads` là danh sách cố định 21 kiểu, phần tử đầu là `free` (không vị trí, `freeSpreadMaxCards` = 12). Mỗi kiểu có tên, mô tả và danh sách `SpreadPosition` song ngữ (gợi ý tùy chọn, phải có cả hai ngôn ngữ hoặc không có). Lá thứ N nằm ở vị trí N; đổi sang kiểu nhỏ hơn thì cắt bớt lá cuối. `QaService.interpret(spread:)` đưa tên kiểu, các vị trí và nhãn vị trí từng lá vào prompt; chưa đủ lá thì dặn AI chỉ đọc vị trí đã có. `QaResult.spreadId` được lưu vào lịch sử, `spreadById` id lạ thì về `free`.
+
 **Lịch sử giải nghĩa (`data/reading_history.dart`):** mỗi câu trả lời ở tab Hỏi đáp (cả giải bài lẫn hỏi tự do) được lưu vào SharedPreferences `qa_history_v1`, mới nhất trước, tối đa 100 mục. Chỉ lưu tên lá + chiều và tên lá của chunk, không lưu text tham chiếu; khi load thì resolve lại từ JSON bundle theo ngôn ngữ của mục. Dữ liệu hỏng đọc ra rỗng chứ không làm vỡ tab. Không đồng bộ đi đâu.
 
 **Sampling params:** `temperature` là tùy chọn. `LlmClient.supportsTemperature` / `supports_temperature` (`app/llm.py`) bỏ nó cho Claude Opus 4.7+, Sonnet 5+, Haiku 5+, Fable/Mythos và OpenAI o-series/gpt-5 (các model này trả 400 "temperature is deprecated"); model chưa biết mà vẫn trả 400 nhắc tới temperature thì gửi lại không có nó. `test/llm_client_test.dart` chốt bảng model.
