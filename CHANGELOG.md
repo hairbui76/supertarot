@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/hairbui76/supertarot/compare/v1.8.0...v1.9.0) (2026-10-15)
+
+
+### Features
+
+* **mobile:** chọn kiểu trải bài khi giải nghĩa ([bdeb2f2](https://github.com/hairbui76/supertarot/commit/bdeb2f23c41227b4ba9e45a24445ea9b328403a1))
+
 ## [1.8.0](https://github.com/hairbui76/supertarot/compare/v1.7.0...v1.8.0) (2026-10-15)
 
 
