@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.0](https://github.com/hairbui76/supertarot/compare/v1.7.0...v1.8.0) (2026-10-15)
+
+
+### Features
+
+* **mobile:** giải bài theo các lá đã chọn và lưu lịch sử trên máy ([87836e0](https://github.com/hairbui76/supertarot/commit/87836e0a5ee9b754eb69974350bf78fe168d040c))
+
+
+### Bug Fixes
+
+* bỏ temperature với model không còn nhận tham số này ([eb602b2](https://github.com/hairbui76/supertarot/commit/eb602b29375651bddbc7baa61923d1ab5aad0589))
+
 ## [1.7.0](https://github.com/hairbui76/supertarot/compare/v1.6.1...v1.7.0) (2026-09-18)
 
 
