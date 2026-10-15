@@ -455,7 +455,11 @@ Tên lá bài trong cả JSON EN và VI đều là tiếng Anh, nên một bản
 
 **Ràng buộc parity:** `HashEmbedder` phải sinh vector giống hệt provider Python, nếu không vector query không cùng không gian với index đã bundle. Hai chỗ dễ sai: `\w` của Dart chỉ ASCII (phải dùng `[\p{L}\p{N}_]+` cho tiếng Việt), và `int.from_bytes(digest, "big")` là số 64-bit không dấu không vừa `int` có dấu của Dart (phải modulo theo từng byte). `test/hash_embedder_test.dart` chốt parity bằng vector tham chiếu sinh từ Python — test đỏ nghĩa là code sai, không phải kỳ vọng sai.
 
-**UI:** bốn tab — Tra cứu (duyệt theo bộ, tìm theo tên, chi tiết lá bài 3 tab Tổng quan/Xuôi/Ngược), Học bài (rút không lặp trong vòng 78 lá + chấm rubric), Hỏi đáp (Q&A trên index), Cài đặt (ngôn ngữ, provider, API key + model, số chunk retrieve).
+**UI:** bốn tab — Tra cứu (duyệt theo bộ, tìm theo tên, chi tiết lá bài 3 tab Tổng quan/Xuôi/Ngược), Học bài (rút không lặp trong vòng 78 lá + chấm rubric), Hỏi đáp (câu hỏi ở trên, chọn nhiều lá theo thứ tự + xuôi/ngược rồi Giải nghĩa qua `QaService.interpret`; không chọn lá thì Q&A trên index), Cài đặt (ngôn ngữ, provider, API key + model, số chunk retrieve).
+
+**Lịch sử giải nghĩa (`data/reading_history.dart`):** mỗi câu trả lời ở tab Hỏi đáp (cả giải bài lẫn hỏi tự do) được lưu vào SharedPreferences `qa_history_v1`, mới nhất trước, tối đa 100 mục. Chỉ lưu tên lá + chiều và tên lá của chunk, không lưu text tham chiếu; khi load thì resolve lại từ JSON bundle theo ngôn ngữ của mục. Dữ liệu hỏng đọc ra rỗng chứ không làm vỡ tab. Không đồng bộ đi đâu.
+
+**Sampling params:** `temperature` là tùy chọn. `LlmClient.supportsTemperature` / `supports_temperature` (`app/llm.py`) bỏ nó cho Claude Opus 4.7+, Sonnet 5+, Haiku 5+, Fable/Mythos và OpenAI o-series/gpt-5 (các model này trả 400 "temperature is deprecated"); model chưa biết mà vẫn trả 400 nhắc tới temperature thì gửi lại không có nó. `test/llm_client_test.dart` chốt bảng model.
 
 **Design system:** neubrutalism theo `DESIGN.md` — viền 3px, bóng cứng lệch 4px không blur, màu phẳng bão hòa cao, không gradient, chữ đậm viết hoa, full light/dark. Token nằm ở `lib/src/theme.dart` dưới dạng ThemeExtension `NeuTokens`; mọi màn hình dựng từ primitive trong `lib/src/widgets/neu.dart` và không hard-code viền/bóng. Ở dark, `line` và `shadow` đổi sang gần trắng vì viền đen trên nền tối vô hình. Chỉ dùng icon vector, không emoji; năm biểu tượng bộ bài vẽ bằng path trong `lib/src/widgets/suit_glyph.dart` vì Material không có gươm/chén/đồng xu.
 

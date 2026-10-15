@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/reading_history.dart';
 import 'data/settings_store.dart';
 import 'data/tarot_repository.dart';
 import 'l10n/strings.dart';
@@ -19,6 +20,7 @@ class AppServices {
     required this.qa,
     required this.grading,
     required this.updates,
+    required this.history,
   });
 
   static Future<AppServices> create() async {
@@ -34,6 +36,7 @@ class AppServices {
       qa: QaService(repository: repository, client: client),
       grading: GradingService(repository: repository, client: client),
       updates: UpdateService(),
+      history: ReadingHistory(prefs),
     );
   }
 
@@ -43,6 +46,7 @@ class AppServices {
   final QaService qa;
   final GradingService grading;
   final UpdateService updates;
+  final ReadingHistory history;
 }
 
 /// Exposes [AppServices] to the widget tree and rebuilds dependents whenever

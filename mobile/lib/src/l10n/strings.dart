@@ -56,6 +56,24 @@ class Strings {
     required this.send,
     required this.thinking,
     required this.sources,
+    required this.pickedCards,
+    required this.pickCards,
+    required this.noCardsPicked,
+    required this.interpret,
+    required this.addAs,
+    required this.clearCards,
+    required this.maxCardsReached,
+    required this.removeCard,
+    required this.done,
+    required this.dragToReorder,
+    required this.readingHistory,
+    required this.clearHistory,
+    required this.clearHistoryConfirm,
+    required this.cancel,
+    required this.delete,
+    required this.deleteReading,
+    required this.reuseReading,
+    required this.generalReading,
     required this.language,
     required this.qaProvider,
     required this.gradingProvider,
@@ -138,6 +156,24 @@ class Strings {
   final String send;
   final String thinking;
   final String sources;
+  final String pickedCards;
+  final String pickCards;
+  final String noCardsPicked;
+  final String interpret;
+  final String addAs;
+  final String clearCards;
+  final String maxCardsReached;
+  final String removeCard;
+  final String done;
+  final String dragToReorder;
+  final String readingHistory;
+  final String clearHistory;
+  final String clearHistoryConfirm;
+  final String cancel;
+  final String delete;
+  final String deleteReading;
+  final String reuseReading;
+  final String generalReading;
   final String language;
   final String qaProvider;
   final String gradingProvider;
@@ -216,12 +252,31 @@ class Strings {
     nextHint: 'Gợi ý tiếp',
     referenceChunks: 'Tài liệu tham chiếu',
     emptyAnswerWarning: 'Bạn chưa viết câu trả lời nào.',
-    askPlaceholder: 'Hỏi về tarot…',
-    askIntro: 'Hỏi bất cứ điều gì về 78 lá bài. App tìm dữ liệu ngay trên máy '
-        'rồi nhờ AI diễn giải.',
+    askPlaceholder: 'Bạn muốn hỏi gì? Ví dụ: công việc 3 tháng tới…',
+    askIntro: 'Viết câu hỏi, chọn các lá đã rút theo thứ tự rồi bấm Giải nghĩa. '
+        'Chạm nút chiều trên mỗi lá để đổi xuôi/ngược. Không chọn lá thì app '
+        'trả lời như hỏi đáp tarot thường.',
     send: 'Gửi',
     thinking: 'Đang xử lý…',
     sources: 'Dữ liệu đã dùng',
+    pickedCards: 'Lá đã rút',
+    pickCards: 'Chọn lá',
+    noCardsPicked: 'Chưa chọn lá nào. Bỏ trống thì app trả lời như hỏi đáp thường.',
+    interpret: 'Giải nghĩa',
+    addAs: 'Thêm ở chiều',
+    clearCards: 'Bỏ hết',
+    maxCardsReached: 'Tối đa 12 lá cho một lần giải.',
+    removeCard: 'Bỏ lá này',
+    done: 'Xong',
+    dragToReorder: 'Giữ và kéo để đổi thứ tự',
+    readingHistory: 'Lịch sử giải nghĩa',
+    clearHistory: 'Xóa lịch sử',
+    clearHistoryConfirm: 'Xóa toàn bộ lịch sử giải nghĩa trên máy này?',
+    cancel: 'Hủy',
+    delete: 'Xóa',
+    deleteReading: 'Xóa mục này',
+    reuseReading: 'Hỏi lại',
+    generalReading: 'Giải bài tổng quan',
     language: 'Ngôn ngữ',
     qaProvider: 'AI cho hỏi đáp',
     gradingProvider: 'AI cho chấm bài',
@@ -304,12 +359,31 @@ class Strings {
     nextHint: 'Next hint',
     referenceChunks: 'Reference material',
     emptyAnswerWarning: 'Write an answer first.',
-    askPlaceholder: 'Ask about tarot…',
-    askIntro: 'Ask anything about the 78 cards. The app searches its bundled '
-        'data on device, then asks AI to explain.',
+    askPlaceholder: 'What do you want to ask? e.g. my work in the next 3 months…',
+    askIntro: 'Write your question, pick the cards you drew in order, then tap '
+        'Interpret. Tap the orientation button on a card to flip it. With no '
+        'cards picked, the app answers it as a general tarot question.',
     send: 'Send',
     thinking: 'Working…',
     sources: 'Data used',
+    pickedCards: 'Your cards',
+    pickCards: 'Pick cards',
+    noCardsPicked: 'No cards yet. Leave it empty to ask a general tarot question.',
+    interpret: 'Interpret',
+    addAs: 'Add as',
+    clearCards: 'Clear',
+    maxCardsReached: 'Up to 12 cards per reading.',
+    removeCard: 'Remove card',
+    done: 'Done',
+    dragToReorder: 'Hold and drag to reorder',
+    readingHistory: 'Reading history',
+    clearHistory: 'Clear history',
+    clearHistoryConfirm: 'Delete all saved readings on this device?',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    deleteReading: 'Delete this reading',
+    reuseReading: 'Ask again',
+    generalReading: 'General reading',
     language: 'Language',
     qaProvider: 'AI for Q&A',
     gradingProvider: 'AI for grading',

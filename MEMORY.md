@@ -6,6 +6,16 @@
 - If a change modifies structure, schemas, runtime behavior, or adds/removes logic, also update `CLAUDE.md` and `AGENTS.md`.
 - Keep entries concise: date, intent, files touched, verification.
 
+## 2026-10-15
+
+- Lỗi: chọn `claude-opus-5-5` thì Hỏi đáp báo "temperature is deprecated for this model". Opus 4.7+, Sonnet 5+, Haiku 5+, Fable/Mythos trả 400 cho sampling params. `LlmClient.complete` (mobile) và `call_llm` (`app/llm.py`) giờ nhận `temperature` tùy chọn, bỏ nó theo bảng model, và gửi lại không có temperature nếu model lạ vẫn trả 400 nhắc tới nó. Cũng bỏ cho OpenAI o-series/gpt-5. Anthropic `max_tokens` 4096 → 16000 vì thinking luôn bật tính vào đó; timeout mobile 90s → 180s; refusal không có text thì báo lỗi rõ.
+- Tab Hỏi đáp làm lại: câu hỏi ở trên, danh sách lá đã rút ở dưới (số thứ tự, ảnh xoay 180° khi ngược, nút đổi chiều, bỏ lá, giữ/kéo để đổi thứ tự), sheet chọn lá 78 lá theo thứ tự bộ bài có tìm kiếm và "Thêm ở chiều" Xuôi/Ngược, tối đa 12 lá. Bấm Giải nghĩa → `QaService.interpret` dựng prompt từ nghĩa đúng chiều của từng lá trong JSON bundle (không qua retrieval). Không chọn lá thì nút thành Gửi và chạy Q&A cũ.
+- Lịch sử giải nghĩa lưu ở máy: `ReadingHistory` (`mobile/lib/src/data/reading_history.dart`) trong SharedPreferences `qa_history_v1`, mới nhất trước, tối đa 100. Lưu tên lá + chiều, resolve lại từ JSON bundle khi load; id có hậu tố ngẫu nhiên vì tick đồng hồ có thể trùng khi lưu liên tiếp. UI: mục vừa giải mở sẵn, mục cũ thu gọn (câu hỏi, ảnh lá, 2 dòng xem trước); nút Hỏi lại / Xóa từng mục, Xóa lịch sử có hộp xác nhận.
+- Verification:
+  - `flutter analyze` sạch, `flutter test` 59 pass (thêm `reading_history_test.dart`; `ask_screen_test.dart` thêm case khởi động lại vẫn còn lịch sử, Hỏi lại, Xóa)
+  - Trước khi thêm lịch sử: `flutter test` 54 pass (thêm `llm_client_test.dart`, `reading_prompt_test.dart`, `ask_screen_test.dart` ở 360×780 để bắt overflow)
+  - `python -m py_compile app/llm.py`; kiểm tra tay `supports_temperature` với 12 model id
+
 ## 2026-09-18
 
 - Tìm kiếm web: gõ "2" không ra "Two of …" vì chỉ so substring tên tiếng Anh. Thêm `web/src/lib/search.ts`: khóa = tên + số lá (Ẩn Chính 0-21, Ace 1…Ten 10) + tên bộ vi/en, bỏ dấu tiếng Việt; số khớp chính xác, chữ khớp tiền tố. "2" → 4 lá Two + The High Priestess; "2 cốc"/"2 coc"/"2 cups" → Two of Cups. Placeholder ô tìm đổi thành gợi ý "Tìm theo tên, số hoặc bộ, vd. 2 cốc".

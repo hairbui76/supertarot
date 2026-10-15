@@ -2,21 +2,41 @@ import '../data/embedding_index.dart';
 import '../data/settings_store.dart';
 import '../data/tarot_repository.dart';
 import '../models/reference_chunk.dart';
+import '../models/tarot_card.dart';
 import 'llm_client.dart';
+
+/// One card the user laid out for a reading, in the orientation it fell.
+class CardPick {
+  const CardPick(this.card, this.orientation);
+
+  final TarotCard card;
+  final CardOrientation orientation;
+
+  bool get isReversed => orientation == CardOrientation.reversed;
+
+  CardPick flipped() => CardPick(
+        card,
+        isReversed ? CardOrientation.upright : CardOrientation.reversed,
+      );
+}
 
 /// Outcome of a freeform question: the answer text plus what it was built from.
 class QaResult {
   const QaResult({
     required this.query,
     required this.answer,
-    required this.chunks,
     required this.mode,
+    this.chunks = const <ReferenceChunk>[],
+    this.picks = const <CardPick>[],
     this.error,
   });
 
   final String query;
   final String answer;
   final List<ReferenceChunk> chunks;
+
+  /// Cards the answer reads, in order. Empty for a plain question.
+  final List<CardPick> picks;
 
   /// Which provider produced the answer, or `context` when the app fell back
   /// to showing retrieved reference text without LLM synthesis.
@@ -76,6 +96,175 @@ class QaService {
         error: error.message,
       );
     }
+  }
+
+  /// Reads [picks] in order against [question]. Card text comes straight from
+  /// the bundled data rather than retrieval, so every chosen card is covered
+  /// in the orientation it fell.
+  Future<QaResult> interpret({
+    required SettingsStore settings,
+    required String question,
+    required List<CardPick> picks,
+  }) async {
+    final String language = settings.language;
+    final LlmProvider? provider = settings.resolveProvider(settings.qaProvider);
+    if (provider == null) {
+      return QaResult(
+        query: question,
+        answer: _readingFallback(picks, language, null),
+        picks: picks,
+        mode: 'context',
+      );
+    }
+
+    try {
+      final String raw = await client.complete(
+        provider: provider,
+        model: settings.model(provider),
+        apiKey: settings.apiKey(provider),
+        systemPrompt: _readingSystemPrompt(language),
+        userPrompt: readingUserPrompt(question, picks, language),
+        temperature: 0.4,
+      );
+      return QaResult(
+        query: question,
+        answer: cleanAnswer(raw),
+        picks: picks,
+        mode: provider.id,
+      );
+    } on LlmException catch (error) {
+      return QaResult(
+        query: question,
+        answer: _readingFallback(picks, language, error.message),
+        picks: picks,
+        mode: 'context',
+        error: error.message,
+      );
+    }
+  }
+
+  static String _readingSystemPrompt(String language) {
+    if (language == 'vi') {
+      return 'Bạn là SuperTarot, người đọc bài tarot. Trả lời bằng tiếng Việt '
+          'tự nhiên, ấm áp nhưng thẳng thắn. Người dùng đưa ra câu hỏi và các '
+          'lá đã rút theo đúng thứ tự, mỗi lá xuôi hoặc ngược. Đọc từng lá theo '
+          'đúng chiều của nó và gắn với câu hỏi, rồi kết nối các lá thành một '
+          'mạch chung. Bám vào dữ liệu lá bài được cung cấp, không bịa nghĩa '
+          'trái với dữ liệu. Không thêm mục Lưu ý, Tham chiếu hay Nguồn. Dùng '
+          '**...** khi cần in đậm và ký tự • cho danh sách.';
+    }
+    return 'You are SuperTarot, a tarot reader. Answer in natural English, '
+        'warm but direct. The user gives a question and the cards they drew, '
+        'in order, each upright or reversed. Read each card in its own '
+        'orientation against the question, then connect the cards into one '
+        'thread. Stay grounded in the card data provided and do not invent '
+        'meanings that contradict it. Do not add Note, References, or Sources '
+        'sections. Use **...** for emphasis and • for bullets.';
+  }
+
+  static String readingUserPrompt(
+    String question,
+    List<CardPick> picks,
+    String language,
+  ) {
+    final bool vi = language == 'vi';
+    final String asked = question.trim().isEmpty
+        ? (vi
+            ? '(Không có câu hỏi cụ thể - hãy đọc tổng quan.)'
+            : '(No specific question - give a general reading.)')
+        : question.trim();
+
+    final String cards = <String>[
+      for (int i = 0; i < picks.length; i++) _cardBlock(i + 1, picks[i], vi),
+    ].join('\n\n');
+
+    if (vi) {
+      return 'Câu hỏi:\n$asked\n\n'
+          'Các lá đã rút (${picks.length} lá, theo thứ tự):\n\n$cards\n\n'
+          'Cách trả lời:\n'
+          '• Mở đầu bằng 1-2 câu trả lời thẳng vào câu hỏi.\n'
+          '• Với từng lá: dòng **N. Tên lá (Xuôi/Ngược)** rồi 2-4 câu giải '
+          'nghĩa gắn với câu hỏi.\n'
+          '• Nếu câu hỏi không nêu cách trải bài, đọc các lá như một dòng chảy '
+          'theo thứ tự (ví dụ 3 lá: quá khứ → hiện tại → tương lai).\n'
+          '• Kết thúc bằng phần tổng kết kết nối các lá và một lời khuyên cụ thể.';
+    }
+    return 'Question:\n$asked\n\n'
+        'Cards drawn (${picks.length}, in order):\n\n$cards\n\n'
+        'How to answer:\n'
+        '• Open with 1-2 sentences that answer the question directly.\n'
+        '• For each card: a line **N. Card name (Upright/Reversed)** then 2-4 '
+        'sentences tying it to the question.\n'
+        '• If the question names no spread, read the cards as a flow in order '
+        '(e.g. 3 cards: past → present → future).\n'
+        '• Close with a summary that connects the cards and one concrete piece '
+        'of advice.';
+  }
+
+  static String _orientationLabel(CardPick pick, bool vi) => pick.isReversed
+      ? (vi ? 'Ngược' : 'Reversed')
+      : (vi ? 'Xuôi' : 'Upright');
+
+  static String _cardBlock(int position, CardPick pick, bool vi) {
+    final TarotCard card = pick.card;
+    final CardSection section = card.section(pick.orientation);
+    final List<String> lines = <String>[
+      '[$position] ${card.name} - ${_orientationLabel(pick, vi)}',
+    ];
+
+    void add(String label, String value) {
+      if (value.trim().isNotEmpty) {
+        lines.add('$label: ${value.trim()}');
+      }
+    }
+
+    add(vi ? 'Bộ' : 'Suit', card.type);
+    add(vi ? 'Nguyên tố' : 'Element', card.element);
+    add(vi ? 'Chiêm tinh' : 'Astrology', card.astrology);
+    add('Yes/No', card.yesNo);
+    add(vi ? 'Từ khóa' : 'Keywords', card.keywords(pick.orientation).join(', '));
+    add(vi ? 'Tóm tắt' : 'Summary', card.shortSummary(pick.orientation));
+    add(vi ? 'Ý nghĩa' : 'Meaning', section.description);
+    add(vi ? 'Tình yêu' : 'Love', section.love);
+    add(vi ? 'Sự nghiệp' : 'Career', section.career);
+    add(vi ? 'Tài chính' : 'Finances', section.finances);
+    add(vi ? 'Cảm xúc' : 'Feelings', section.feelings);
+    add(vi ? 'Hành động' : 'Actions', section.actions);
+    return lines.join('\n');
+  }
+
+  static String _readingFallback(
+    List<CardPick> picks,
+    String language,
+    String? error,
+  ) {
+    final bool vi = language == 'vi';
+    final List<String> lines = <String>[];
+    if (vi) {
+      lines.add(error == null
+          ? 'Chưa có API key nên đây là nghĩa gốc của từng lá. Thêm key ở tab '
+              'Cài đặt để AI giải bài theo câu hỏi.'
+          : 'Phần giải bài bằng AI đang lỗi, tạm hiện nghĩa gốc của từng lá.'
+              '\nLỗi: $error');
+    } else {
+      lines.add(error == null
+          ? "No API key is set, so here is each card's base meaning. Add a key "
+              'in Settings for a reading tied to your question.'
+          : "The AI reading failed, so here is each card's base meaning."
+              '\nError: $error');
+    }
+    lines.add('');
+
+    for (int i = 0; i < picks.length; i++) {
+      final CardPick pick = picks[i];
+      final String short = pick.card.shortSummary(pick.orientation);
+      final String summary = short.isNotEmpty
+          ? short
+          : pick.card.section(pick.orientation).description;
+      lines.add('**${i + 1}. ${pick.card.name} (${_orientationLabel(pick, vi)})**'
+          ': ${_compact(summary, 360)}');
+    }
+    return lines.join('\n');
   }
 
   static String _systemPrompt(String language) {

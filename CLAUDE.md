@@ -224,8 +224,11 @@ Provider note: `SUPERTAROT_QA_PROVIDER` hỗ trợ `auto`, `openai`, `anthropic`
 
 App Flutter đóng gói toàn bộ dữ liệu tarot vào APK. Tra cứu, rút bài học và retrieval chạy offline; chỉ diễn giải/chấm bài bằng AI mới cần mạng và API key người dùng tự nhập trong tab Cài đặt.
 
+- Giải bài (`QaService.interpret`, `CardPick`): prompt lấy thẳng nghĩa đúng chiều của từng lá từ JSON bundle, không qua retrieval; tối đa 12 lá, kéo để đổi thứ tự.
+- Lịch sử giải nghĩa lưu trên máy (`lib/src/data/reading_history.dart`, SharedPreferences key `qa_history_v1`, mới nhất trước, tối đa 100 mục). Lá lưu theo tên + chiều rồi resolve lại từ JSON bundle khi load. Mỗi mục có Hỏi lại (điền lại câu hỏi + lá) và Xóa; có nút xóa toàn bộ.
+- `temperature` là tùy chọn: `LlmClient.supportsTemperature` (và `supports_temperature` trong `app/llm.py`) bỏ tham số này cho Claude Opus 4.7+/Sonnet 5+/Haiku 5+/Fable và OpenAI o-series/gpt-5; model lạ trả 400 nhắc tới temperature thì gửi lại không có nó. Anthropic `max_tokens` 16000 vì thinking tính vào đó.
 - API key lưu bằng `flutter_secure_storage` (Android EncryptedSharedPreferences), gọi thẳng OpenAI/Anthropic/Google, không qua máy chủ trung gian.
-- Bốn tab: Tra cứu (78 lá theo thứ tự bộ bài, pinch để đổi 1-5 cột), Học bài (rút không lặp + chấm rubric), Hỏi đáp (Q&A trên embedding index), Cài đặt.
+- Bốn tab: Tra cứu (78 lá theo thứ tự bộ bài, pinch để đổi 1-5 cột), Học bài (rút không lặp + chấm rubric), Hỏi đáp (câu hỏi ở trên, chọn nhiều lá theo thứ tự + xuôi/ngược ở dưới rồi Giải nghĩa; không chọn lá thì Q&A trên embedding index), Cài đặt.
 - Tab Cài đặt có nút kiểm tra cập nhật: đọc GitHub Releases, so version, tải APK đúng ABI rồi giao cho package installer. Cần `REQUEST_INSTALL_PACKAGES` và APK phải cùng chữ ký với bản đang cài.
 - Icon app sinh từ `mobile/icon/app_icon.png` bằng `dart run flutter_launcher_icons`; file sinh ra được commit nên CI không chạy generator.
 - UI theo hệ neubrutalism trong `DESIGN.md`: token ở `lib/src/theme.dart` (`NeuTokens`), primitive ở `lib/src/widgets/neu.dart`. Chỉ dùng icon vector, không emoji; 5 biểu tượng bộ bài vẽ tay trong `lib/src/widgets/suit_glyph.dart`.
