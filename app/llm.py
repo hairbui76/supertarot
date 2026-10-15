@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from typing import Literal
 
 import requests
@@ -63,15 +64,47 @@ def model_for_provider(config: AppConfig, provider: str) -> str:
     raise ValueError(f"Unsupported LLM provider: {provider}")
 
 
+def supports_temperature(provider: str, model: str) -> bool:
+    """Whether ``model`` still accepts a custom ``temperature``.
+
+    Claude Opus 4.7+, Sonnet 5+, Haiku 5+ and Fable/Mythos return 400 for
+    sampling parameters; OpenAI reasoning models (o-series, gpt-5) only accept
+    the default. Mirrors ``LlmClient.supportsTemperature`` in the mobile app.
+    """
+    model_id = model.strip().lower()
+    if provider == "anthropic":
+        if re.search(r"claude-(fable|mythos)", model_id):
+            return False
+        match = re.search(
+            r"claude-(opus|sonnet|haiku)-(\d+)(?:-(\d{1,2})(?=-|@|$))?", model_id
+        )
+        if not match:
+            return True
+        major = int(match.group(2))
+        minor = int(match.group(3) or 0)
+        if match.group(1) == "opus":
+            return (major, minor) < (4, 7)
+        return major < 5
+    if provider == "openai":
+        return not re.match(r"(o\d|gpt-5)", model_id)
+    return True
+
+
+def _rejects_temperature(error: Exception) -> bool:
+    return getattr(error, "status_code", None) == 400 and "temperature" in str(error).lower()
+
+
 def call_llm(
     *,
     provider: str,
     model: str,
     system_prompt: str,
     user_prompt: str,
-    temperature: float,
+    temperature: float | None,
     json_mode: bool = False,
 ) -> str:
+    if temperature is not None and not supports_temperature(provider, model):
+        temperature = None
     if provider == "openai":
         return call_openai(
             model=model,
@@ -103,7 +136,7 @@ def call_openai(
     model: str,
     system_prompt: str,
     user_prompt: str,
-    temperature: float,
+    temperature: float | None,
     json_mode: bool,
 ) -> str:
     if not os.environ.get("OPENAI_API_KEY"):
@@ -118,8 +151,9 @@ def call_openai(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": temperature,
     }
+    if temperature is not None:
+        kwargs["temperature"] = temperature
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
 
@@ -127,6 +161,11 @@ def call_openai(
         response = client.chat.completions.create(**kwargs)
     except TypeError:
         kwargs.pop("response_format", None)
+        response = client.chat.completions.create(**kwargs)
+    except Exception as exc:
+        if "temperature" not in kwargs or not _rejects_temperature(exc):
+            raise
+        kwargs.pop("temperature")
         response = client.chat.completions.create(**kwargs)
 
     return (response.choices[0].message.content or "").strip()
@@ -137,7 +176,7 @@ def call_anthropic(
     model: str,
     system_prompt: str,
     user_prompt: str,
-    temperature: float,
+    temperature: float | None,
 ) -> str:
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise RuntimeError("ANTHROPIC_API_KEY is not configured.")
@@ -145,18 +184,29 @@ def call_anthropic(
     import anthropic
 
     client = anthropic.Anthropic()
-    response = client.messages.create(
-        model=model,
-        max_tokens=4096,
-        temperature=temperature,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
+    kwargs: dict[str, object] = {
+        "model": model,
+        # Thinking tokens count against max_tokens on models that always think.
+        "max_tokens": 16000,
+        "system": system_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+    if temperature is not None:
+        kwargs["temperature"] = temperature
+    try:
+        response = client.messages.create(**kwargs)
+    except anthropic.BadRequestError as exc:
+        if "temperature" not in kwargs or not _rejects_temperature(exc):
+            raise
+        kwargs.pop("temperature")
+        response = client.messages.create(**kwargs)
     parts: list[str] = []
     for block in response.content:
         text = getattr(block, "text", None)
         if text:
             parts.append(text)
+    if not parts and response.stop_reason == "refusal":
+        raise RuntimeError("Anthropic declined this request (refusal).")
     return "\n".join(parts).strip()
 
 
@@ -165,7 +215,7 @@ def call_google(
     model: str,
     system_prompt: str,
     user_prompt: str,
-    temperature: float,
+    temperature: float | None,
     json_mode: bool,
 ) -> str:
     api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
@@ -180,10 +230,10 @@ def call_google(
                 "parts": [{"text": user_prompt}],
             }
         ],
-        "generationConfig": {
-            "temperature": temperature,
-        },
+        "generationConfig": {},
     }
+    if temperature is not None:
+        payload["generationConfig"]["temperature"] = temperature  # type: ignore[index]
     if json_mode:
         payload["generationConfig"]["responseMimeType"] = "application/json"  # type: ignore[index]
 

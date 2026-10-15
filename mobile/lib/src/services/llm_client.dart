@@ -6,9 +6,16 @@ import '../data/settings_store.dart';
 
 /// Raised when a provider call fails in a way worth showing to the user.
 class LlmException implements Exception {
-  LlmException(this.message);
+  LlmException(this.message, {this.statusCode, this.body = ''});
 
   final String message;
+  final int? statusCode;
+  final String body;
+
+  /// The provider refused the request because of a sampling parameter, e.g.
+  /// "temperature is deprecated for this model" on newer Claude models.
+  bool get rejectsTemperature =>
+      statusCode == 400 && body.toLowerCase().contains('temperature');
 
   @override
   String toString() => message;
@@ -20,19 +27,93 @@ class LlmException implements Exception {
 class LlmClient {
   LlmClient({http.Client? httpClient})
       : _http = httpClient ?? http.Client(),
-        _timeout = const Duration(seconds: 90);
+        // Newer models always think before answering, so a multi-card reading
+        // can take well over a minute.
+        _timeout = const Duration(seconds: 180);
 
   final http.Client _http;
   final Duration _timeout;
 
+  /// [temperature] is a preference, not a requirement: it is dropped for
+  /// models that reject sampling parameters, and the request is retried
+  /// without it if the provider still complains.
   Future<String> complete({
     required LlmProvider provider,
     required String model,
     required String apiKey,
     required String systemPrompt,
     required String userPrompt,
-    required double temperature,
+    double? temperature,
     bool jsonMode = false,
+  }) async {
+    final double? sent =
+        supportsTemperature(provider, model) ? temperature : null;
+    try {
+      return await _complete(
+        provider: provider,
+        model: model,
+        apiKey: apiKey,
+        systemPrompt: systemPrompt,
+        userPrompt: userPrompt,
+        temperature: sent,
+        jsonMode: jsonMode,
+      );
+    } on LlmException catch (error) {
+      if (sent == null || !error.rejectsTemperature) {
+        rethrow;
+      }
+      return _complete(
+        provider: provider,
+        model: model,
+        apiKey: apiKey,
+        systemPrompt: systemPrompt,
+        userPrompt: userPrompt,
+        temperature: null,
+        jsonMode: jsonMode,
+      );
+    }
+  }
+
+  /// Whether [model] still accepts a custom `temperature`.
+  ///
+  /// Claude Opus 4.7+, Sonnet 5+, Haiku 5+ and Fable/Mythos return 400 for
+  /// sampling parameters; OpenAI reasoning models (o-series, gpt-5) only
+  /// accept the default.
+  static bool supportsTemperature(LlmProvider provider, String model) {
+    final String id = model.trim().toLowerCase();
+    switch (provider) {
+      case LlmProvider.anthropic:
+        if (RegExp(r'claude-(fable|mythos)').hasMatch(id)) {
+          return false;
+        }
+        final RegExpMatch? match =
+            RegExp(r'claude-(opus|sonnet|haiku)-(\d+)(?:-(\d{1,2})(?=-|@|$))?')
+                .firstMatch(id);
+        if (match == null) {
+          return true;
+        }
+        final int major = int.parse(match.group(2)!);
+        final int minor = int.tryParse(match.group(3) ?? '') ?? 0;
+        if (match.group(1) == 'opus') {
+          return major < 4 || (major == 4 && minor < 7);
+        }
+        return major < 5;
+      case LlmProvider.openai:
+        return !RegExp(r'^(o\d|gpt-5)').hasMatch(id);
+      case LlmProvider.google:
+      case LlmProvider.auto:
+        return true;
+    }
+  }
+
+  Future<String> _complete({
+    required LlmProvider provider,
+    required String model,
+    required String apiKey,
+    required String systemPrompt,
+    required String userPrompt,
+    required double? temperature,
+    required bool jsonMode,
   }) {
     switch (provider) {
       case LlmProvider.openai:
@@ -71,7 +152,7 @@ class LlmClient {
     required String apiKey,
     required String systemPrompt,
     required String userPrompt,
-    required double temperature,
+    required double? temperature,
     required bool jsonMode,
   }) async {
     final Map<String, dynamic> payload = <String, dynamic>{
@@ -80,7 +161,7 @@ class LlmClient {
         <String, String>{'role': 'system', 'content': systemPrompt},
         <String, String>{'role': 'user', 'content': userPrompt},
       ],
-      'temperature': temperature,
+      if (temperature != null) 'temperature': temperature,
       if (jsonMode)
         'response_format': <String, String>{'type': 'json_object'},
     };
@@ -111,7 +192,7 @@ class LlmClient {
     required String apiKey,
     required String systemPrompt,
     required String userPrompt,
-    required double temperature,
+    required double? temperature,
   }) async {
     final http.Response response = await _post(
       Uri.parse('https://api.anthropic.com/v1/messages'),
@@ -122,8 +203,9 @@ class LlmClient {
       },
       body: <String, dynamic>{
         'model': model,
-        'max_tokens': 4096,
-        'temperature': temperature,
+        // Thinking tokens count against max_tokens on models that always think.
+        'max_tokens': 16000,
+        if (temperature != null) 'temperature': temperature,
         'system': systemPrompt,
         'messages': <Map<String, String>>[
           <String, String>{'role': 'user', 'content': userPrompt},
@@ -140,7 +222,11 @@ class LlmClient {
         if ((block as Map<String, dynamic>)['text'] is String)
           block['text'] as String,
     ];
-    return parts.join('\n').trim();
+    final String text = parts.join('\n').trim();
+    if (text.isEmpty && data['stop_reason'] == 'refusal') {
+      throw LlmException('Anthropic declined this request (refusal).');
+    }
+    return text;
   }
 
   Future<String> _google({
@@ -148,7 +234,7 @@ class LlmClient {
     required String apiKey,
     required String systemPrompt,
     required String userPrompt,
-    required double temperature,
+    required double? temperature,
     required bool jsonMode,
   }) async {
     final Uri uri = Uri.parse(
@@ -177,7 +263,7 @@ class LlmClient {
           },
         ],
         'generationConfig': <String, dynamic>{
-          'temperature': temperature,
+          if (temperature != null) 'temperature': temperature,
           if (jsonMode) 'responseMimeType': 'application/json',
         },
       },
@@ -218,9 +304,12 @@ class LlmClient {
     }
 
     if (response.statusCode >= 400) {
+      final String body =
+          utf8.decode(response.bodyBytes, allowMalformed: true);
       throw LlmException(
-        '$providerLabel returned ${response.statusCode}: '
-        '${_shorten(utf8.decode(response.bodyBytes, allowMalformed: true))}',
+        '$providerLabel returned ${response.statusCode}: ${_shorten(body)}',
+        statusCode: response.statusCode,
+        body: body,
       );
     }
     return response;
